@@ -1,11 +1,11 @@
 # Phase 11 · Deployments and release
 
 ## Goal
-The release on `main` is deployed automatically and verifiably to Render (required) and Google Cloud Run (bonus), each with its own Neon database. Scheduled ticks are running, the README explains both deployments, and the demo has been rehearsed twice with a backup video.
+The release on `main` is deployed automatically and verifiably to Render (required) and Google Cloud Run (bonus), Render with Render Postgres and Cloud Run with Neon. Scheduled ticks are running, the README explains both deployments, and the demo has been rehearsed twice with a backup video.
 
 ## People
 - **Owner:** Lead (Render, deploy-render job, tick workflow, release, runbook, rehearsals, video).
-- **Imrul:** Cloud Run + Neon B + Artifact Registry + WIF + Cloud Scheduler, `deploy-cloudrun` job, README deployment section.
+- **Imrul:** Cloud Run + Neon + Artifact Registry + WIF + Cloud Scheduler, `deploy-cloudrun` job, README deployment section.
 - **Ajoy:** production smoke tests on both URLs.
 - **Reviews:** Lead ↔ Imrul review each other; Ajoy approves the release PR.
 
@@ -20,15 +20,15 @@ The release on `main` is deployed automatically and verifiably to Render (requir
 ## Ordered task checklist
 Step-by-step commands and click paths are in [deployment-runbook.md](../../guides/operations/deployment-runbook.md).
 
-### A. Render + Neon A (Lead) (§17.3)
-- [ ] Neon project A: Postgres 17, region per §17.2 **(verify)**; **direct** (non-pooled) host; convert to `jdbc:postgresql://<host>/<db>?sslmode=require`.
+### A. Render web service + Render Postgres (Khalid) (§17.3)
+- [ ] Render Postgres Free: PostgreSQL 17, Singapore; **internal** host; `jdbc:postgresql://<internal-host>:5432/<db>`; record the creation date (expires after 30 days).
 - [ ] Render Web Service: Docker, root `Dockerfile`, branch `main`, Free, Singapore, health check `/actuator/health`, **Auto-Deploy Off**, env vars per §16.3 Render column (`SPRING_PROFILES_ACTIVE=prod`, `SOURCERIPPLE_SCHEDULER_MODE=both`, `SOURCERIPPLE_MIN_INTERVAL_HOURS=6`, `SOURCERIPPLE_FETCH_ALLOW_PRIVATE_TARGETS=false`, demo vars, secrets, `JAVA_TOOL_OPTIONS` per NFR-RES-1).
 - [ ] GitHub: secret `RENDER_DEPLOY_HOOK_URL`, variable `RENDER_APP_URL`; secret `TICK_TOKEN` = Render's `SOURCERIPPLE_TICK_TOKEN`.
 - [ ] `ci.yml` job `deploy-render` (push to `main` only, `needs: [backend, frontend, docker]`, `concurrency: deploy-${{ github.ref }}`): POST `"$RENDER_DEPLOY_HOOK_URL&ref=$GITHUB_SHA"`, then poll `$RENDER_APP_URL/actuator/info` until `git.commit == $GITHUB_SHA` (15 min timeout, retries through cold start); fail otherwise (§15.3).
 - [ ] `.github/workflows/scheduler-tick.yml`: `cron: "17 */3 * * *"` + `workflow_dispatch`; POST `$RENDER_APP_URL/internal/scheduler/tick` with `X-SR-Tick-Token`, retrying through cold start (§15.3).
 
-### B. Cloud Run + Neon B (Imrul) (§17.4)
-- [ ] Neon project B (separate quota).
+### B. Cloud Run + Neon (Imrul) (§17.4)
+- [ ] Neon project (Postgres 17, region per §17.2 **(verify)**, **direct** host, `?sslmode=require`).
 - [ ] GCP: enable Run, Artifact Registry, IAM Credentials, Cloud Scheduler APIs; Artifact Registry Docker repo with a cleanup policy keeping the last 2 images (< 0.5 GB).
 - [ ] Deployer service account (`run.admin`, `artifactregistry.writer`, `iam.serviceAccountUser`); Workload Identity Federation pool + provider bound to this repository; secrets `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT`; variables `GCP_PROJECT_ID`, `GCP_REGION`, `CLOUD_RUN_SERVICE`, `CLOUD_RUN_URL`.
 - [ ] Service `sourceripple`, asia-southeast1 **(verify free tier applies)**: request-based billing, min 0, **max 1**, 1 vCPU, 1 GiB, startup CPU boost, concurrency 20, timeout 300 s, `--allow-unauthenticated`; env per §16.3 Cloud Run column with `SOURCERIPPLE_SCHEDULER_MODE=external`; secrets via Secret Manager **(verify free allowance)** or env vars from CI secrets.
@@ -77,13 +77,13 @@ Step-by-step commands and click paths are in [deployment-runbook.md](../../guide
 - Live URLs (Render, Cloud Run) in README.
 - `deploy-render` log showing the SHA match next to the `/actuator/info` response.
 - Render dashboard (Auto-Deploy Off), Cloud Run service page, Cloud Scheduler job page.
-- Neon usage pages at T-24 h (< 70% quota).
+- Render Postgres expiry date and Neon usage page at T-24 h (< 70% quota).
 
 ## Risks and gotchas
 - **Hook URL already has `?key=`**, so the ref is appended with `&ref=`; passing `ref` also keeps auto-deploy off (§15.3).
 - **`git.commit` source:** Render provides `RENDER_GIT_COMMIT`; Cloud Run needs `GIT_COMMIT` set at deploy. Without it the poll never matches and the job fails (by design).
-- **Neon JDBC:** convert `postgresql://user:pass@host/db` to JDBC form, put user and password in their own variables, and use the **direct** host, not `-pooler` (§16.3).
-- **Render spin-down:** first request ~1 min. Polling and ticks must retry; never add a 24/7 keep-alive (Neon CU-hours, §17.3).
+- **JDBC URLs:** convert `postgresql://user:pass@host/db` to JDBC form, put user and password in their own variables, and use the **direct** host, not `-pooler` (§16.3).
+- **Render spin-down:** first request ~1 min. Polling and ticks must retry; never add a 24/7 keep-alive (free instance hours, §17.3).
 - **Cloud Run has no CPU between requests:** `SCHEDULER_MODE=external` only; never rely on `@Scheduled` or `@Async` there (DEC-08).
 - **`allow-private-targets=true` in prod refuses startup** (NFR-SEC-1.7). Check env before deploying.
 - **Billing account** missing → raise immediately (§24 Q3); fallback host must be chosen and verified then.

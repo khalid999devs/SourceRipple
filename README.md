@@ -66,7 +66,7 @@ flowchart LR
     OUT[Outbox dispatcher: webhooks]
     SPA[Static SPA]
   end
-  DB[(PostgreSQL: Neon / compose)]
+  DB[(PostgreSQL: Render / Neon / compose)]
   WEB[(Public web pages)]
   B --> SEC --> API --> SVC
   A --> SEC --> MCP --> SVC
@@ -211,7 +211,7 @@ flowchart LR
 
 ## Deployment
 
-_Step-by-step guides for Render + Neon and Google Cloud Run + Neon + Cloud Scheduler are added
+_Step-by-step guides for Render + Render Postgres and Google Cloud Run + Neon + Cloud Scheduler are added
 in Phase 11. Cloud Run notes: [infra/cloudrun/README.md](infra/cloudrun/README.md)._
 
 **Environment variables** (full list with comments in [`.env.example`](.env.example)):
@@ -219,7 +219,7 @@ in Phase 11. Cloud Run notes: [infra/cloudrun/README.md](infra/cloudrun/README.m
 | Variable | Purpose |
 |---|---|
 | `SPRING_PROFILES_ACTIVE` | `local` or `prod` |
-| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | JDBC connection (`jdbc:postgresql://<host>/<db>?sslmode=require` for Neon) |
+| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | JDBC connection (`jdbc:postgresql://<host>:5432/<db>`; add `?sslmode=require` for Neon) |
 | `PORT` | HTTP port (injected by Render and Cloud Run) |
 | `SOURCERIPPLE_PUBLIC_BASE_URL` | Absolute base URL for links |
 | `SOURCERIPPLE_ENCRYPTION_KEY` | AES-GCM key for webhook secrets (32 bytes, base64) |
@@ -247,7 +247,7 @@ pool panels.
 
 | Member | Responsibilities |
 |---|---|
-| _Lead_ | Repository, CI/CD, infrastructure, integrations, observability, deployments |
+| Khalid (Lead) | Repository, CI/CD, infrastructure, integrations, observability, deployments |
 | Ajoy | Core backend: identity, workspace, fetching, monitoring, diff, impacts |
 | Imrul | Frontend foundation, product screens, notifications, webhooks UI, marketing site |
 

@@ -17,11 +17,11 @@ A public, protected repository where an empty Spring Boot + React app builds, te
 ## Ordered task checklist
 
 ### A. Decisions and accounts (Lead)
-- [ ] Q4: get submission and demo dates; set the Phase 11 start ≥ 5 days before submission on the board (§21.2).
-- [ ] Q1: ask the instructor for a one-line written OK on ADMIN/MAINTAINER/REVIEWER (§6). Q2: ask whether Render + Neon counts as "deployed on Render".
+- [ ] Q4: get submission and demo dates; the build target is 2 weeks (§21.3); set the Phase 11 start ≥ 5 days before submission on the board (§21.2).
+- [x] Q1 and Q2 resolved: roles ADMIN/MAINTAINER/REVIEWER are final (§6); the initial production database is Render Postgres (§17.3).
 - [ ] Q3: decide who attaches the GCP billing account. If nobody can, raise it now (§17.4 pitfalls).
-- [ ] Q6: confirm Apache-2.0; the Lead's name goes into PRD §21.
-- [ ] Create accounts (no deploy): Render workspace, Neon projects **A** and **B** (Singapore, verify region per §17.2), GCP project with billing linked (§21.2 note).
+- [x] Q6 resolved: Apache-2.0; the Lead is Khalid (PRD §21.1).
+- [ ] Create accounts (no deploy): Render workspace, Neon account (for Cloud Run), GCP project with billing linked (§21.2 note).
 - [ ] Q5 (Ajoy): find the newest stable Spring Boot line the Spring AI MCP server starter (WebMVC, Streamable HTTP) supports; the Lead pins it in `backend/pom.xml` (§11.4, FR-MCP-3). Record the finding in the Q5 issue.
 
 ### B. Bootstrap the repository (Lead, in this order)
@@ -77,7 +77,7 @@ A public, protected repository where an empty Spring Boot + React app builds, te
 - [ ] CI `backend`, `frontend`, `docker` green on a PR into `develop` and required in protection.
 - [ ] `cp .env.example .env && docker compose up --build` starts `db` and `app`; `curl localhost:8080/actuator/health` → `{"status":"UP"}`.
 - [ ] Ajoy and Imrul have each cloned the repo, run `scripts/setup-git-hooks.sh` and started the stack locally (§21.2); the ≥ 5 merged PRs per member (§21.4) accrue from Phase 2 on.
-- [ ] Render, Neon A/B and GCP accounts exist; Q1–Q6 answered or escalated.
+- [ ] Render, Neon and GCP accounts exist; Q3–Q5 answered or escalated.
 
 ## Evidence to capture (§19.1, §20.2)
 - Screenshots of both branch protection pages (§19.1 "Branch settings screenshot").
