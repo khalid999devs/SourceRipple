@@ -6,7 +6,7 @@ Derived from PRD §21 (team, phases, calendar, collaboration, scope cuts) and §
 
 | Member | GitHub | Phases led | Role in other phases |
 |---|---|---|---|
-| **Lead** (repository owner) | `khalid999devs` | 1, 8–11 | Reviews Ajoy's PRs (alternating with Imrul); demo kit in Phase 5; pairs on I9 in Phase 6 |
+| **Khalid** (Lead, repository owner) | `khalid999devs` | 1, 8–11 | Reviews Ajoy's PRs (alternating with Imrul); demo kit in Phase 5; pairs on I9 in Phase 6 |
 | **Ajoy** | `ajoycodes` | 2–7 | Reviews in 8–11; core bug fixes; pattern class diagrams (Phase 10); production smoke tests (Phase 11) |
 | **Imrul** | `kayes2207054` | 8–10 (with Lead) | Frontend foundation in Phase 3; reviews UI conventions in Phase 7; Cloud Run and docs in Phase 11 |
 
@@ -53,17 +53,12 @@ Phases 8 and 9 may overlap Phase 7, because different people own them (PRD §21.
 
 ## Calendar (PRD §21.3)
 
-Exact dates come once Q4 (submission and demo dates) is answered. Until then, use the blueprint's five weeks:
+The full build fits in **2 weeks**. Exact dates follow the submission date (Q4).
 
 | Week | Phases | Notes |
 |---|---|---|
-| 1 | 1, 2, start of 3 | Protection on day 1 after the initial scaffold commit |
-| 2 | 3 (backend + frontend foundation), 4 | Imrul's frontend foundation runs alongside Ajoy |
-| 3 | 5, 6 | Phase 6 exit (golden flow in CI) is the core-loop milestone |
-| 4 | 7, 8, 9 | 8 and 9 run in parallel with 7 |
-| 5 | 10, 11 | Phase 11 **starts at least 5 days before submission** |
-
-When Q4 is answered, the Lead replaces the week column with dates in the GitHub Projects board milestones (not in this file).
+| 1 | 1 (done), 2, 3, 4, 5 | Ajoy on the core; Imrul builds the Phase 3 frontend foundation in parallel; Khalid builds the demo kit and reviews |
+| 2 | 6, 7 (Ajoy) overlapping 8, 9 (Khalid, Imrul), then 10 and 11 | Phase 11 starts at least 5 days before submission |
 
 ## Review rotation (PRD §21.4)
 
@@ -89,7 +84,7 @@ Every PR states its phase and PRD IDs (see [README](README.md#traceability-conve
 Deploying in Phase 11 is a team choice. These keep the "App not deployed" automatic fail from ever being at risk:
 
 - [ ] Phase 1: the production image is built and smoke-tested in the CI `docker` job on every PR.
-- [ ] Phase 1: Render, Neon (projects A and B) and GCP accounts exist; Q2 and Q3 answered.
+- [ ] Phase 1: Render, Neon and GCP accounts exist; Q3 answered.
 - [ ] §17 and [guides/deployment-runbook.md](guides/operations/deployment-runbook.md) hold the exact steps before Phase 11.
 - [ ] Phase 11 starts **at least 5 days before submission**. The Lead puts this date on the board in Phase 1.
 - [ ] An optional one-off smoke deploy is allowed at any earlier point (for example after Phase 6).

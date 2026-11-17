@@ -28,7 +28,7 @@ This is a single living set of documents. Git history is the change record, so t
 | [guides/testing.md](guides/engineering/testing.md) | Unit and integration test recipes, MockWebServer, Surefire/Failsafe, JaCoCo, failing-then-fixed evidence |
 | [guides/git-and-ci.md](guides/operations/git-and-ci.md) | Repo bootstrap, protection click-path, PRs, release flow, CI jobs, secrets |
 | [guides/local-setup-and-environments.md](guides/operations/local-setup-and-environments.md) | Prerequisites, Compose, running apps separately, profiles, env vars, demo accounts |
-| [guides/deployment-runbook.md](guides/operations/deployment-runbook.md) | Render + Neon, Cloud Run + Neon, verification, demo-day runbook |
+| [guides/deployment-runbook.md](guides/operations/deployment-runbook.md) | Render + Render Postgres, Cloud Run + Neon, verification, demo-day runbook |
 | [handoffs/ajoy-phases-2-7.md](handoffs/ajoy-phases-2-7.md) | Paste-ready implementation brief for Phases 2–7 |
 
 ## Traceability conventions

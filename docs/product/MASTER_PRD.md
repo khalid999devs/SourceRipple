@@ -203,7 +203,7 @@ No webhook, API key or MCP is needed.
 
 ## 6. Roles and access control
 
-The guideline's role triple (ADMIN, SELLER, BUYER) is applied as **domain-equivalent roles**. The team was told the exact names are not required.
+The guideline's role triple (ADMIN, SELLER, BUYER) is applied as **domain-equivalent roles**. The names below are the team's final choice; each role is defined precisely by the rules and the permission matrix that follow.
 
 | Role | Guideline equivalent | Who | Summary |
 |---|---|---|---|
@@ -957,7 +957,7 @@ flowchart LR
     OUT[Outbox dispatcher: webhooks]
     SPA[Static SPA]
   end
-  DB[(PostgreSQL: Neon / compose)]
+  DB[(PostgreSQL: Render / Neon / compose)]
   WEB[(Public web pages)]
   B --> SEC --> API --> SVC
   A --> SEC --> MCP --> SVC
@@ -1342,7 +1342,7 @@ The server binds to `${PORT:8080}`. Render injects `PORT` (default 10000) and Cl
 | Variable | Purpose | Local | Render | Cloud Run |
 |---|---|---|---|---|
 | `SPRING_PROFILES_ACTIVE` | `local` / `prod` (`test` is used by the test suite) | local | prod | prod |
-| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | JDBC connection. For Neon: `jdbc:postgresql://<host>/<db>?sslmode=require` with the **direct (non-pooled)** host. Render and Neon give `postgresql://user:pass@host/db`, which **must be converted to JDBC form**. | compose db | Neon project A | Neon project B |
+| `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` | JDBC connection. Render and Neon give `postgresql://user:pass@host/db`, which **must be converted to JDBC form**: `jdbc:postgresql://<host>:5432/<db>`. On Render use the database's **internal** host; for Neon add `?sslmode=require` and use the **direct (non-pooled)** host. | compose db | Render Postgres | Neon |
 | `PORT` | HTTP port | 8080 | injected | injected |
 | `SOURCERIPPLE_PUBLIC_BASE_URL` | Absolute links (evidence URLs, demo fixture and receiver) | `http://localhost:8080` | Render URL | Cloud Run URL |
 | `SOURCERIPPLE_ENCRYPTION_KEY` | AES-GCM key for webhook secrets (32 bytes, base64) | dev value | secret | secret |
@@ -1367,21 +1367,21 @@ The server binds to `${PORT:8080}`. Render injects `PORT` (default 10000) and Cl
 |---|---|---|
 | Code, CI and security | **GitHub, public repository** | Branch protection, rulesets, Actions on standard runners, secret scanning with push protection, Dependabot and dependency review are all free for public repositories. |
 | Primary app hosting (**required**) | **Render, free web service (Docker)** | 512 MB RAM; **spins down after 15 min without inbound traffic**; about 1 min cold start; 750 free instance hours per workspace per month; 5 GB bandwidth and 500 build minutes per month; no persistent disk; may be restarted at any time; deploy hooks support `ref=<sha>`; exposes `RENDER_GIT_COMMIT`. |
-| Database for Render | **Neon Free** (project A) | Free permanently, no credit card. 1 GB storage per project; 100 CU-hours per project per month; **scales to zero after 5 min idle (cannot be disabled)** and resumes in a few hundred milliseconds; 5 GB transfer per project. |
-| Database fallback | Render Postgres Free | 1 GB, **expires 30 days after creation** (14-day grace period), one per workspace. Use only if Neon is blocked, and create it within 30 days of grading. |
+| Database for Render (**initial**) | **Render Postgres Free** | 1 GB, one per workspace, reached over Render's private network (internal URL). **Expires 30 days after creation** (14-day grace period), so it is created at the start of Phase 11 and its expiry date is recorded. |
+| Database fallback / long-term | **Neon Free** | Free permanently, no credit card; 1 GB per project; 100 CU-hours per project per month; scales to zero after 5 min idle. The Render app moves here (`pg_dump` → `pg_restore`) before the Render database expires, if the deployment must outlive it. |
 | Second deployment (**bonus**) | **Google Cloud Run** (request-based billing) | Free tier of 2M requests, 180,000 vCPU-seconds and 360,000 GiB-seconds per month. **CPU is allocated only while requests are processed.** Idle instances shut down. **Requires a billing account** (card on file). |
-| Database for Cloud Run | **Neon Free** (project B) | Separate project, so each deployment gets its own quota. |
+| Database for Cloud Run | **Neon Free** | Render Postgres is private to Render, so Cloud Run uses its own Neon project. |
 | Image registry for Cloud Run | Artifact Registry | 0.5 GB of free storage. Keep the last 2 images with a cleanup policy. |
 | Cloud Run wake-up | Cloud Scheduler | One HTTP job every hour with the tick header. **(verify)** the free allowance has historically been 3 jobs per billing account. |
 | Not used | Cloud SQL | No free tier (30-day trial only). |
 
 ### 17.2 Region (DEC-10)
-Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Render *Singapore*, Neon *AWS ap-southeast-1*, Cloud Run *asia-southeast1*.
+Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Render *Singapore* (web service and Postgres), Neon *AWS ap-southeast-1*, Cloud Run *asia-southeast1*.
 - **(verify)** that Neon offers that region and that Cloud Run's free tier applies there.
 - If not, put each app and its database in the *same* US region (Render Oregon or Ohio, Neon us-east or us-west, Cloud Run us-central1).
 
-### 17.3 Primary: Render with Neon (DEC-09, P0)
-1. Create Neon project A (Postgres 17). Copy the **direct** connection details and form the JDBC URL with `sslmode=require`.
+### 17.3 Primary: Render web service with Render Postgres (DEC-09, P0)
+1. Create a **Render Postgres Free** database (PostgreSQL 17, region Singapore). Use its **internal** host, database, user and password to form the JDBC URL. Record the creation date: the database expires 30 days later.
 2. Create a Render **Web Service**:
    - repository connected; branch `main`; runtime **Docker**; root `Dockerfile`; instance **Free**; region Singapore;
    - health check path `/actuator/health`;
@@ -1398,7 +1398,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 - **Disk.** The filesystem is ephemeral. Nothing is written to disk.
 - **Memory.** 512 MB, so the NFR-RES-1 JVM flags apply.
 - **Build minutes** (500/month). Only `main` deploys, and the image build skips tests.
-- **Neon CU-hours.** Render is awake only about 15 min after each request or tick, and Neon sleeps 5 min after that. Roughly 8 ticks a day plus demo use fits within 100 CU-hours. **Do not add a 24/7 keep-alive pinger**, as it would burn Neon's quota.
+- **Database expiry.** Render Postgres Free expires 30 days after creation (14-day grace period). Create it at the start of Phase 11, keep the expiry date in the runbook, and before it lapses either migrate to Neon (`pg_dump` → `pg_restore`) or upgrade the plan. **Do not add a 24/7 keep-alive pinger**, as it burns free instance hours.
 
 ### 17.4 Second deployment: Google Cloud Run with Neon (DEC-11, P1, +10 bonus)
 **Cloud Run vs Cloudflare (decision: Cloud Run).**
@@ -1436,7 +1436,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 
 ### 17.5 Demo-day runbook
 - **T-24 h:**
-  - Neon quota is below 70%.
+  - The Render database has not expired, and Neon usage (Cloud Run) is below 70%.
   - Render and Cloud Run show the latest SHA in `/actuator/info`.
   - Fixture reset to v1.
   - Demo users can log in.
@@ -1490,7 +1490,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 ### 19.1 Mandatory requirements
 | Guideline requirement | How SourceRipple meets it | PRD ref | Evidence at grading |
 |---|---|---|---|
-| Spring Boot, PostgreSQL, Spring Security, Docker, GitHub CI/CD, Render | Spring Boot monolith, PostgreSQL (Neon / Compose), Spring Security, Docker and Compose, GitHub Actions, Render | §11, §15–§17 | Repository, live URL |
+| Spring Boot, PostgreSQL, Spring Security, Docker, GitHub CI/CD, Render | Spring Boot monolith, PostgreSQL (Render Postgres / Neon / Compose), Spring Security, Docker and Compose, GitHub Actions, Render | §11, §15–§17 | Repository, live URL |
 | Exactly 3 members | Three members, each owning code phases | §21 | Commit and PR history |
 | Registration, login/logout, BCrypt | FR-AUTH-1..5 | §7 | I1, I2; database shows BCrypt hashes |
 | Role-based authorization (3 roles), URL and method-level | ADMIN / MAINTAINER / REVIEWER; `SecurityFilterChain` rules + `@PreAuthorize` + `AccessPolicy` | §6 | I4, I5, I6; live 403 demo |
@@ -1501,7 +1501,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 | Dockerfile + `docker-compose.yml` (app + PostgreSQL); environment variables; `docker compose up --build` | Root multi-stage Dockerfile; Compose with db, app, prometheus, grafana; `.env` | §16 | Live run; CI `docker` job |
 | Branches `main` (protected) / `develop` / feature; no direct push; PR with ≥ 1 approval | §15.2 rules, admins included | §15.2 | Branch settings screenshot, PR list |
 | GitHub Actions: build, test, auto-deploy to Render from `main` | `ci.yml`: backend, frontend, docker, deploy-render (SHA-verified) | §15.3 | Actions run links |
-| Deployed on Render, publicly accessible | Render free web service + Neon | §17.3 | Live URL |
+| Deployed on Render, publicly accessible | Render free web service + Render Postgres | §17.3 | Live URL |
 | README: description, architecture diagram, ER diagram, API endpoints, run instructions, CI/CD explanation | README outline | §20.1 | README |
 | 15-minute demo | Timed script | §20.2 | Presentation |
 
@@ -1554,7 +1554,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 7. **Run locally**: prerequisites, `cp .env.example .env`, `docker compose up --build`, URLs, demo accounts.
 8. Testing: how to run, counts, and where the reports are.
 9. **CI/CD explanation**: a pipeline diagram (Mermaid), branch strategy, protection rules, deploy verification.
-10. **Deployment**: Render + Neon and Cloud Run + Neon + Cloud Scheduler step by step, with the environment variable reference (bonus documentation).
+10. **Deployment**: Render web service + Render Postgres and Cloud Run + Neon + Cloud Scheduler step by step, with the environment variable reference (bonus documentation).
 11. Observability: how to open Prometheus and Grafana, and what each panel shows.
 12. Team and contributions; license; third-party notices.
 
@@ -1576,7 +1576,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 ## 21. Delivery plan, team and scope-cut order
 
 ### 21.1 Team and working model
-**Members:** **Lead** (repository owner; fill in name), **Ajoy** and **Imrul**. All three write production code, open PRs and review each other.
+**Members:** **Khalid** (Lead, repository owner, GitHub `khalid999devs`), **Ajoy** (`ajoycodes`) and **Imrul** (`kayes2207054`). "Lead" in this document means Khalid. All three write production code, open PRs and review each other.
 
 | Phases | Who leads | What happens |
 |---|---|---|
@@ -1598,7 +1598,7 @@ Use **Singapore** everywhere, the nearest major region to the team (UTC+6): Rend
 | 8 | Integrations and admin | Imrul + Lead | Ajoy reviews | **Imrul:** FR-NTF + S12, FR-WHK + S11 webhooks UI, S13 admin UI. **Lead:** FR-KEY, FR-MCP, FR-ADM-2..4 backend; extends the Phase 6 change transaction with notification and outbox rows (FR-NTF, FR-WHK-3). Tests U25–U27, U29, I12, I14 | Signed webhook DELIVERED to the demo receiver; admin console works |
 | 9 | Observability and marketing site | Lead + Imrul | Ajoy reviews | **Lead:** §18 (Actuator, metrics, Prometheus, Grafana), FR-WEB-5..7 (waitlist API, admin waitlist, demo login and reset), U31, I17. **Imrul:** §8.6 landing, pricing, legal and SEO (FR-WEB-1..4, 8..11) | Grafana dashboard live through Compose; landing and pricing reach Lighthouse ≥ 90 locally |
 | 10 | Polish and hardening | Imrul + Lead | **Ajoy:** core bug fixes, pattern diagrams | **Imrul:** app polish (Motion, ⌘K, keyboard triage, S9 graph, split/unified diff, S4 charts, responsive, accessibility). **Lead:** test audit (≥ 31 unit / 17 IT), security review, failing-then-fixed CI evidence, README (§20.1) except the deployment section, demo script | All P0 and P1 items done except deployment; CI green |
-| 11 | Deployments and release | Lead | **Imrul:** Cloud Run and docs. **Ajoy:** production smoke tests | §17.3 Render + Neon A, `deploy-render` job with SHA check, `scheduler-tick.yml`; §17.4 Cloud Run + Neon B + Cloud Scheduler + `deploy-cloudrun`; README deployment section; §17.5 runbook; two rehearsals; backup video; release `develop → main` | Both public URLs serve the release SHA; the golden flow passes on Render; the demo has been rehearsed |
+| 11 | Deployments and release | Lead | **Imrul:** Cloud Run and docs. **Ajoy:** production smoke tests | §17.3 Render web service + Render Postgres, `deploy-render` job with SHA check, `scheduler-tick.yml`; §17.4 Cloud Run + Neon B + Cloud Scheduler + `deploy-cloudrun`; README deployment section; §17.5 runbook; two rehearsals; backup video; release `develop → main` | Both public URLs serve the release SHA; the golden flow passes on Render; the demo has been rehearsed |
 
 **Deployment timing.** Deploying in Phase 11 is the team's choice. To keep the "App not deployed" automatic fail from ever being at risk:
 - the production Docker image is built and smoke-tested in CI from Phase 1;
@@ -1616,7 +1616,7 @@ An optional one-off smoke deploy is allowed at any earlier point.
   - Phase 9's marketing pages need only the Phase 3 shells, but start after Phase 6 to protect the core schedule.
   - Phase 10 follows 8–9; Phase 11 comes last.
   - Phases 8–9 may overlap Phase 7, since different people own them.
-- **Rough calendar** (blueprint's 5 weeks): Phases 1–3 in week 1–2, Phases 4–6 in week 2–3, Phases 7–9 in week 3–4, Phases 10–11 in week 5. Exact dates come once Q4 is answered.
+- **Calendar: the full build fits in 2 weeks.** Week 1: Phase 1 (done), Phases 2–5 (Ajoy), with Imrul's Phase 3 frontend foundation in parallel. Week 2: Phases 6–7 (Ajoy) overlapping Phases 8–9 (Khalid and Imrul), then Phase 10 and Phase 11 in the last days. Exact dates follow the submission date (Q4).
 
 ### 21.4 Collaboration rules (rubric evidence)
 - Each member has ≥ 5 merged PRs containing code and has given ≥ 5 reviews.
@@ -1640,14 +1640,14 @@ Cut in this order:
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Render free spin-down and restarts | Missed schedules; slow first request | Catch-up on wake, cron tick, synchronous manual check, sessions in the database, warm-up before the demo, backup video |
-| Neon CU-hour quota | Database suspended until month end | No 24/7 pinger; tick every 3 h; separate projects per deployment; check usage weekly |
+| Free database limits | Render Postgres expires after 30 days; Neon suspends compute when its monthly quota is used up | Create the Render database at the start of Phase 11 and record its expiry; migrate to Neon before it lapses if needed; no 24/7 pinger; check Neon usage weekly |
 | No GCP billing account | Second-deployment bonus at risk | Decide in Phase 1 (Q3); choose and verify a fallback host early |
 | Spring AI MCP vs Spring Boot version | MCP blocked | Pin a compatible Boot version in Phase 1; MCP is P1 and cut first |
 | JS-rendered pages | Empty extraction | `UNSUPPORTED` state with a clear hint; demo uses controlled fixtures |
 | SSRF or abuse on a public instance | Security incident, host suspension | NFR-SEC-1 and NFR-SEC-7; prod refuses `allow-private-targets`; admin kill switches |
 | Scope creep (the guideline values workflow over features) | Late, low-quality delivery | P0 list, scope-cut order, phase exit criteria |
 | Uneven contribution | Rubric collaboration evidence | Phase ownership in §21, PR and review minimums |
-| Deployment left to Phase 11 | "App not deployed" automatic fail if it slips | Image verified in CI from Phase 1; Render, Neon and GCP accounts created in Phase 1; deployment steps pre-written (§17); Phase 11 starts at least 5 days before submission; an optional one-off smoke deploy is allowed at any time |
+| Deployment left to Phase 11 | "App not deployed" automatic fail if it slips | Image verified in CI from Phase 1; Render and GCP accounts created in Phase 1 (Neon when Cloud Run is set up); deployment steps pre-written (§17); Phase 11 starts at least 5 days before submission; an optional one-off smoke deploy is allowed at any time |
 | Live demo failure | Lost demo marks | Runbook (§17.5), local Compose fallback, recorded video |
 | Free-tier terms change | Hosting breaks | Re-verify §17.1 at the start of each phase; this PRD is updated if anything changes |
 | Marketing polish eats core time | Graded work slips | Phase 9 marketing work starts only after the Phase 6 core-loop exit; animations are first in the cut order |
@@ -1705,7 +1705,7 @@ The core idea is unchanged. These are compliance fixes (C), feasibility fixes (F
 | DEC-06 | OkHttp with DNS guard |
 | DEC-07 | Per-source scheduling |
 | DEC-08 | No work after the response; internal loop and/or external tick |
-| DEC-09 | Render + Neon primary |
+| DEC-09 | Render web service + Render Postgres primary; Neon as long-term fallback |
 | DEC-10 | Singapore region |
 | DEC-11 | Cloud Run + Neon secondary; Cloudflare rejected for app hosting |
 | DEC-12 | Hatchet-inspired dark design language |
@@ -1718,12 +1718,12 @@ The core idea is unchanged. These are compliance fixes (C), feasibility fixes (F
 ## 24. Open questions
 | # | Question | Owner | Needed by |
 |---|---|---|---|
-| Q1 | Domain role names instead of ADMIN/SELLER/BUYER. The team understands they are allowed. Get a one-line written confirmation from the instructor if possible. | Lead | Phase 1 |
-| Q2 | Is the Render app using an external free Postgres (Neon) acceptable as "deployed on Render"? If not, use Render Postgres Free and create it within 30 days of grading. | Lead | Phase 1 |
+| Q1 | ~~Role names~~ **Resolved:** ADMIN / MAINTAINER / REVIEWER are final, as defined in §6. | Khalid | Done |
+| Q2 | ~~External database~~ **Resolved:** the initial production database is Render Postgres (§17.3), with Neon as the fallback. | Khalid | Done |
 | Q3 | Who can attach a GCP billing account for Cloud Run? | Team | Phase 1 |
-| Q4 | Exact submission and demo dates, to turn the phases into a calendar. | Lead | Phase 1 |
+| Q4 | Exact submission and demo dates. The build target is set: everything within 2 weeks (§21.3). | Khalid | Phase 2 |
 | Q5 | Spring Boot version compatible with the Spring AI MCP starter at implementation time. | Ajoy | Phase 1 |
-| Q6 | Confirm Apache-2.0; add the lead's name to §21. | Lead | Phase 1 |
+| Q6 | ~~License and Lead name~~ **Resolved:** Apache-2.0; the Lead is Khalid (§21.1). | Khalid | Done |
 | Q7 | Trademark and domain clearance for "SourceRipple" before any paid launch, and the choice of a production domain for the public site. | Lead | Before public launch |
 | Q8 | Licensing strategy for commercialization. Apache-2.0 lets anyone host the product commercially. Decide whether paid Cloud features live in a separate proprietary module or stay hosting-only. | Team | Before Cloud launch |
 | Q9 | Final plan limits and prices, set after pilot interviews (blueprint §22); payment provider choice (post-lab). | Team | Before Cloud launch |

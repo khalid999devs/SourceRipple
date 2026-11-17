@@ -1,11 +1,22 @@
 # Deployment runbook
 
-Phase 11 procedure for PRD §17.3 (Render + Neon, required), §17.4 (Cloud Run + Neon, bonus) and §17.5 (demo day). Items the PRD marks **(verify)** must be checked on the day and the result noted in the Phase 11 PR. Items marked **(check)** are implementation details not stated in the PRD that should be confirmed against current provider docs.
+Phase 11 procedure for PRD §17.3 (Render web service + Render Postgres, required), §17.4 (Cloud Run + Neon, bonus) and §17.5 (demo day). Items the PRD marks **(verify)** must be checked on the day and the result noted in the Phase 11 PR. Items marked **(check)** are implementation details not stated in the PRD that should be confirmed against current provider docs.
 
 Before starting: re-read §17.1 free-tier terms and confirm they still hold (PRD §22). Region decision (§17.2): Singapore everywhere. **(verify)** that Neon offers AWS ap-southeast-1 and that Cloud Run's free tier applies in asia-southeast1; if not, put each app and its database in the same US region.
 
-## 1. Neon → JDBC (both deployments)
-1. Neon console → New project (Postgres 17, region per §17.2). Project **A** for Render, project **B** for Cloud Run (separate quotas).
+## 1. Databases → JDBC
+**Render Postgres (Render deployment).** Render → New → **PostgreSQL**, plan **Free**, PostgreSQL 17, region **Singapore**. Create it at the start of Phase 11 and write its creation date in the Phase 11 PR: it expires 30 days later (14-day grace). From its connection panel use the **internal** host:
+
+| Variable | Value |
+|---|---|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://INTERNAL_HOST:5432/DBNAME` |
+| `SPRING_DATASOURCE_USERNAME` | `USER` |
+| `SPRING_DATASOURCE_PASSWORD` | `PASSWORD` |
+
+Before the expiry date, either upgrade the plan or move the data to Neon with `pg_dump` → `pg_restore`.
+
+**Neon (Cloud Run deployment).**
+1. Neon console → New project (Postgres 17, region per §17.2).
 2. Connection details → **disable "Connection pooling"** to get the **direct** host (no `-pooler` in the hostname).
 3. Neon shows `postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require`. Convert:
 
@@ -17,7 +28,7 @@ Before starting: re-read §17.1 free-tier terms and confirm they still hold (PRD
 
 User and password never go inside the JDBC URL. If Neon's string includes extra libpq-only parameters (e.g. `channel_binding`), drop them unless the PostgreSQL JDBC driver supports them **(check)**.
 
-## 2. Render + Neon A (Lead) — §17.3
+## 2. Render web service + Render Postgres (Khalid) — §17.3
 1. Render → New → **Web Service** → connect the GitHub repository; branch `main`; runtime **Docker**; Dockerfile path `./Dockerfile`; instance **Free**; region **Singapore**.
 2. Health check path: `/actuator/health`.
 3. Settings → Build & Deploy → **Auto-Deploy: Off**.
@@ -28,9 +39,9 @@ User and password never go inside the JDBC URL. If Neon's string includes extra 
 7. Merge the `deploy-render` job, then open the release PR `develop → main`. On merge, CI calls the hook with `&ref=$GITHUB_SHA` and polls `/actuator/info` until `git.commit` matches.
 8. The demo seeder runs on startup (demo enabled). Verify the golden flow on the public URL (section 5).
 
-Render pitfalls (§17.3): spin-down after 15 min idle and ~1 min cold start; restarts lose memory (sessions are in Postgres); ephemeral disk; 512 MB RAM; 500 build minutes (only `main` deploys, image skips tests); **no 24/7 keep-alive pinger** (burns Neon CU-hours). If Q2 rules out Neon, use Render Postgres Free and create it within 30 days of grading (§17.1).
+Render pitfalls (§17.3): spin-down after 15 min idle and ~1 min cold start; restarts lose memory (sessions are in Postgres); ephemeral disk; 512 MB RAM; 500 build minutes (only `main` deploys, image skips tests); **no 24/7 keep-alive pinger** (burns free instance hours). Track the Render Postgres expiry date (§17.3).
 
-## 3. Cloud Run + Neon B (Imrul) — §17.4
+## 3. Cloud Run + Neon (Imrul) — §17.4
 One-time setup (replace `PROJECT`, `OWNER/REPO`):
 ```bash
 gcloud config set project PROJECT
@@ -93,7 +104,7 @@ Then Ajoy's smoke list in [phase-11-deployments.md](../../phases/release/phase-1
 
 ## Demo-day runbook
 **T-24 h** (§17.5):
-- [ ] Neon A and B usage below 70% of CU-hours.
+- [ ] Render Postgres not expired; Neon usage below 70% of CU-hours.
 - [ ] Render and Cloud Run `/actuator/info` show the latest release SHA.
 - [ ] Fixture reset to v1 on both deployments.
 - [ ] Admin, maintainer and reviewer can log in on both.
