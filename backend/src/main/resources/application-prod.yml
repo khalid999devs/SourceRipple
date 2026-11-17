@@ -1,0 +1,14 @@
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+sourceripple:
+  scheduler:
+    mode: ${SOURCERIPPLE_SCHEDULER_MODE:both}

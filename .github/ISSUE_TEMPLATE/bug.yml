@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work as the PRD describes.
+title: "fix(<scope>): <short summary>"
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the error envelope (error code and requestId) if the API returned one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Reference the PRD requirement if one applies (for example FR-IMP-3).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options: [Local Compose, Local dev servers, CI, Render, Cloud Run]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit SHA
+      description: From /actuator/info (git.commit) or `git rev-parse HEAD`.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove secrets, cookies and personal data before pasting.
+      render: text

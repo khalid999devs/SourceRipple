@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+**/.DS_Store
+.env
+.env.*
+docs
+infra
+scripts
+**/node_modules
+frontend/dist
+backend/target
+**/*.log

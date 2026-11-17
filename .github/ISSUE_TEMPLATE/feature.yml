@@ -1,0 +1,67 @@
+name: Feature / task
+description: A planned piece of work from the PRD phase plan.
+title: "feat(<scope>): <short summary>"
+labels: [feature]
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: Delivery phase from PRD §21.2.
+      options:
+        - "1 · Foundation and scaffolding"
+        - "2 · Data model, identity and access"
+        - "3 · Workspace and API foundation"
+        - "4 · Safe fetching and extraction"
+        - "5 · Monitoring engine and watches"
+        - "6 · Change detection, dependencies and impacts"
+        - "7 · Baseline product screens"
+        - "8 · Integrations and admin"
+        - "9 · Observability and marketing site"
+        - "10 · Polish and hardening"
+        - "11 · Deployments and release"
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options: [P0, P1, P2]
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options: [backend, frontend, devops, docs]
+    validations:
+      required: true
+  - type: input
+    id: prd
+    attributes:
+      label: PRD IDs
+      description: Requirement and test IDs, for example FR-WCH-1, NFR-SEC-1, U12, I13.
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should exist when this is done, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable outcomes, including the tests that prove them.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Dependencies on other issues, risks, open questions.

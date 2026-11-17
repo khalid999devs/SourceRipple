@@ -1,0 +1,15 @@
+sourceripple:
+  public-base-url: http://localhost
+  scheduler:
+    mode: external
+  watches:
+    min-interval-hours: 1
+  fetch:
+    allow-private-targets: true
+  demo:
+    enabled: false
+
+logging:
+  level:
+    io.sourceripple: DEBUG
+    org.testcontainers: INFO

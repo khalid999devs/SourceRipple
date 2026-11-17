@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sourceripple
+
+logging:
+  level:
+    io.sourceripple: DEBUG
+
+sourceripple:
+  watches:
+    min-interval-hours: ${SOURCERIPPLE_MIN_INTERVAL_HOURS:1}
+  fetch:
+    allow-private-targets: ${SOURCERIPPLE_FETCH_ALLOW_PRIVATE_TARGETS:true}
+  demo:
+    enabled: ${SOURCERIPPLE_DEMO_ENABLED:true}

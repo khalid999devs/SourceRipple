@@ -1,0 +1,93 @@
+name: sourceripple
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    image: sourceripple:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      SOURCERIPPLE_PUBLIC_BASE_URL: ${SOURCERIPPLE_PUBLIC_BASE_URL:-http://localhost:8080}
+      SOURCERIPPLE_SCHEDULER_MODE: internal
+      SOURCERIPPLE_DEMO_ENABLED: "true"
+      SOURCERIPPLE_FETCH_ALLOW_PRIVATE_TARGETS: "true"
+      SOURCERIPPLE_ENCRYPTION_KEY: ${SOURCERIPPLE_ENCRYPTION_KEY:?set SOURCERIPPLE_ENCRYPTION_KEY in .env}
+      SOURCERIPPLE_ADMIN_EMAIL: ${SOURCERIPPLE_ADMIN_EMAIL:?set SOURCERIPPLE_ADMIN_EMAIL in .env}
+      SOURCERIPPLE_ADMIN_PASSWORD: ${SOURCERIPPLE_ADMIN_PASSWORD:?set SOURCERIPPLE_ADMIN_PASSWORD in .env}
+      SOURCERIPPLE_METRICS_USERNAME: ${SOURCERIPPLE_METRICS_USERNAME:?set SOURCERIPPLE_METRICS_USERNAME in .env}
+      SOURCERIPPLE_METRICS_PASSWORD: ${SOURCERIPPLE_METRICS_PASSWORD:?set SOURCERIPPLE_METRICS_PASSWORD in .env}
+      SOURCERIPPLE_TICK_TOKEN: ${SOURCERIPPLE_TICK_TOKEN:?set SOURCERIPPLE_TICK_TOKEN in .env}
+      SOURCERIPPLE_DEMO_WEBHOOK_SECRET: ${SOURCERIPPLE_DEMO_WEBHOOK_SECRET:?set SOURCERIPPLE_DEMO_WEBHOOK_SECRET in .env}
+      SOURCERIPPLE_DEMO_USER_PASSWORD: ${SOURCERIPPLE_DEMO_USER_PASSWORD:?set SOURCERIPPLE_DEMO_USER_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  prometheus:
+    image: prom/prometheus:v3.16.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    secrets:
+      - metrics_username
+      - metrics_password
+    depends_on:
+      - app
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:13.2.6
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/sourceripple.json
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+
+secrets:
+  metrics_username:
+    environment: SOURCERIPPLE_METRICS_USERNAME
+  metrics_password:
+    environment: SOURCERIPPLE_METRICS_PASSWORD
+
+volumes:
+  db-data:
+  prometheus-data:
+  grafana-data:

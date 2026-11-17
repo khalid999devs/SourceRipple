@@ -1,0 +1,20 @@
+#!/bin/sh
+
+protected_branches="main develop"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  branch="${remote_ref#refs/heads/}"
+  for protected in $protected_branches; do
+    if [ "$branch" = "$protected" ]; then
+      echo "" >&2
+      echo "pre-push: direct pushes to '$protected' are not allowed." >&2
+      echo "Push a work branch (feature/p<N>-<slug>, fix/..., chore/..., docs/..., hotfix/...)" >&2
+      echo "and open a pull request into develop. See CONTRIBUTING.md." >&2
+      echo "Bypassing this hook with --no-verify is forbidden." >&2
+      echo "" >&2
+      exit 1
+    fi
+  done
+done
+
+exit 0
