@@ -33,8 +33,6 @@ spring:
     timeout: 7d
     jdbc:
       initialize-schema: never
-      # The spring_session tables do not exist yet, so the expiry cleanup job stays off.
-      cleanup-cron: "-"
 
 management:
   endpoints:
