@@ -1,5 +1,6 @@
 package io.sourceripple.identity.application.account;
 
+import io.sourceripple.identity.application.EmailAddresses;
 import io.sourceripple.identity.domain.Role;
 import io.sourceripple.identity.domain.RoleName;
 import io.sourceripple.identity.domain.RoleRepository;
@@ -8,6 +9,7 @@ import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.api.ErrorCode;
 import io.sourceripple.shared.api.error.status.BadRequestException;
 import io.sourceripple.shared.api.error.status.NotFoundException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -42,6 +44,11 @@ public class UserAccountService {
                         query.trim(), query.trim(), pageable)
                 : users.findAll(pageable);
         return page.map(UserAccount::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UUID> findIdByEmail(String email) {
+        return users.findByEmailIgnoreCase(EmailAddresses.normalize(email)).map(User::getId);
     }
 
     @Transactional
