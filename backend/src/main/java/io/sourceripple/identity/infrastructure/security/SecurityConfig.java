@@ -2,7 +2,7 @@ package io.sourceripple.identity.infrastructure.security;
 
 import io.sourceripple.identity.infrastructure.security.handler.JsonAccessDeniedHandler;
 import io.sourceripple.identity.infrastructure.security.handler.JsonAuthenticationEntryPoint;
-import io.sourceripple.shared.api.SpaRoutes;
+import io.sourceripple.shared.api.spa.SpaRoutes;
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

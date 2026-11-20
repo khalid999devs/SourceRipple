@@ -1,9 +1,11 @@
 package io.sourceripple.shared.api;
 
 import io.sourceripple.shared.api.error.ApiException;
+import io.sourceripple.shared.api.error.status.RateLimitedException;
 import java.util.Comparator;
 import java.util.List;
 import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,6 +18,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(RateLimitedException.class)
+    ResponseEntity<ApiError> handleRateLimited(RateLimitedException ex) {
+        ApiError body = new ApiError(ex.code().name(), ex.getMessage(), MDC.get("requestId"), true, List.of());
+        return ResponseEntity.status(ex.code().status())
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(ex.retryAfterSeconds()))
+                .body(body);
+    }
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ApiError> handleApi(ApiException ex) {

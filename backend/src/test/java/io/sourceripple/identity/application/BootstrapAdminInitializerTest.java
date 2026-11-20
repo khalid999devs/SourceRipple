@@ -80,7 +80,7 @@ class BootstrapAdminInitializerTest {
 
     private BootstrapAdminInitializer initializer(String email, String password) {
         SourceRippleProperties properties = new SourceRippleProperties(
-                null, null, null, new SourceRippleProperties.Admin(email, password), null, null, null, null, null, null);
+                null, null, null, new SourceRippleProperties.Admin(email, password), null, null, null, null, null, null, null);
         return new BootstrapAdminInitializer(users, roles, passwordEncoder, properties, CLOCK);
     }
 }

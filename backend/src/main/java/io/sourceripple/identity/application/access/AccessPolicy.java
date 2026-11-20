@@ -1,8 +1,8 @@
 package io.sourceripple.identity.application.access;
 
 import io.sourceripple.identity.domain.RoleName;
-import io.sourceripple.shared.api.error.ForbiddenException;
-import io.sourceripple.shared.api.error.NotFoundException;
+import io.sourceripple.shared.api.error.status.ForbiddenException;
+import io.sourceripple.shared.api.error.status.NotFoundException;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
