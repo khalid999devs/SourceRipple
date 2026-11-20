@@ -47,7 +47,8 @@ public class UrlCanonicalizer {
         String host = canonicalHost(rawHost);
         int defaultPort = scheme.equals("https") ? 443 : 80;
         int port = rawPort == -1 ? defaultPort : rawPort;
-        if (port != defaultPort && !allowedPorts.contains(port)) {
+        // Local and test fixtures listen on arbitrary ports; the same flag that admits them lifts the port rule.
+        if (port != defaultPort && !allowedPorts.contains(port) && !addressPolicy.allowsPrivateTargets()) {
             throw blocked("Port " + port + " is not allowed.");
         }
         rejectForbiddenLiteral(host);
