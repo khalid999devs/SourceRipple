@@ -62,6 +62,15 @@ public class User {
         roles.add(role);
     }
 
+    public void replaceRoles(Set<Role> newRoles) {
+        roles.clear();
+        roles.addAll(newRoles);
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public void recordLogin(Instant at) {
         lastLoginAt = at;
     }

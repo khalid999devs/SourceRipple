@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import io.sourceripple.shared.api.error.ForbiddenException;
-import io.sourceripple.shared.api.error.NotFoundException;
+import io.sourceripple.shared.api.error.status.ForbiddenException;
+import io.sourceripple.shared.api.error.status.NotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

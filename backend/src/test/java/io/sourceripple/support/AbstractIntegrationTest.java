@@ -4,16 +4,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.sourceripple.TestcontainersConfiguration;
+import io.sourceripple.identity.domain.RoleName;
+import io.sourceripple.identity.domain.RoleRepository;
+import io.sourceripple.identity.domain.User;
+import io.sourceripple.identity.domain.UserRepository;
 import jakarta.servlet.http.Cookie;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -29,6 +36,15 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected MockMvc mvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private static final String XSRF_TOKEN = "integration-test-xsrf-token";
 
@@ -59,12 +75,33 @@ public abstract class AbstractIntegrationTest {
     }
 
     protected ResultActions login(String email, String password) throws Exception {
+        return loginFrom(randomAddress(), email, password);
+    }
+
+    protected ResultActions loginFrom(String clientAddress, String email, String password) throws Exception {
         return mvc.perform(post("/api/v1/auth/login")
                 .with(xsrf())
+                .with(request -> {
+                    request.setRemoteAddr(clientAddress);
+                    return request;
+                })
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"email": "%s", "password": "%s"}
                         """.formatted(email, password)));
+    }
+
+    protected Cookie createAdminAndLogin() throws Exception {
+        String email = uniqueEmail();
+        User admin = new User(email, passwordEncoder.encode(PASSWORD), "Admin", Instant.now());
+        admin.addRole(roleRepository.findByName(RoleName.ADMIN).orElseThrow());
+        userRepository.save(admin);
+        return sessionCookie(login(email, PASSWORD).andExpect(status().isOk()));
+    }
+
+    protected static String randomAddress() {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        return "10." + random.nextInt(256) + "." + random.nextInt(256) + "." + random.nextInt(1, 255);
     }
 
     protected Cookie registerAndLogin(String accountType) throws Exception {

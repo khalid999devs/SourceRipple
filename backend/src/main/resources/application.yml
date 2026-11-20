@@ -113,6 +113,10 @@ sourceripple:
   webhooks:
     timeout: 5s
     max-attempts: 6
+  rate-limit:
+    login:
+      requests: 10
+      window: 15m
   demo:
     enabled: ${SOURCERIPPLE_DEMO_ENABLED:false}
     webhook-secret: ${SOURCERIPPLE_DEMO_WEBHOOK_SECRET:}

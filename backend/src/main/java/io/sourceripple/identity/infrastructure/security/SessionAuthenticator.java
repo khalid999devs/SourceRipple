@@ -1,5 +1,6 @@
 package io.sourceripple.identity.infrastructure.security;
 
+import io.sourceripple.identity.application.LoginThrottle;
 import io.sourceripple.identity.application.access.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,18 +16,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class SessionAuthenticator {
 
+    private final LoginThrottle loginThrottle;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy contextHolder = SecurityContextHolder.getContextHolderStrategy();
 
     public SessionAuthenticator(
-            AuthenticationManager authenticationManager, SecurityContextRepository securityContextRepository) {
+            LoginThrottle loginThrottle,
+            AuthenticationManager authenticationManager,
+            SecurityContextRepository securityContextRepository) {
+        this.loginThrottle = loginThrottle;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
     }
 
     public AuthenticatedUser login(
             String email, String password, HttpServletRequest request, HttpServletResponse response) {
+        loginThrottle.check(request.getRemoteAddr(), email);
         Authentication authentication = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(email, password));
         if (request.getSession(false) != null) {

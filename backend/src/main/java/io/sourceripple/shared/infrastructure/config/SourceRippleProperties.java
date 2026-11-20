@@ -16,6 +16,7 @@ public record SourceRippleProperties(
         Watches watches,
         Fetch fetch,
         Webhooks webhooks,
+        RateLimit rateLimit,
         Demo demo) {
 
     public record Admin(String email, String password) {}
@@ -53,6 +54,10 @@ public record SourceRippleProperties(
             List<Integer> allowedPorts) {}
 
     public record Webhooks(Duration timeout, int maxAttempts) {}
+
+    public record RateLimit(Limit login) {}
+
+    public record Limit(int requests, Duration window) {}
 
     public record Demo(boolean enabled, String webhookSecret, String userPassword) {}
 }

@@ -1,4 +1,4 @@
-package io.sourceripple.shared.api;
+package io.sourceripple.shared.api.spa;
 
 import java.util.Set;
 
