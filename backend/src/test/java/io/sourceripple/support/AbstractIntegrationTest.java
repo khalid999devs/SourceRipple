@@ -5,6 +5,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.sourceripple.TestcontainersConfiguration;
 import jakarta.servlet.http.Cookie;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -26,12 +30,28 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected MockMvc mvc;
 
+    private static final String XSRF_TOKEN = "integration-test-xsrf-token";
+
+    protected static RequestPostProcessor xsrf() {
+        return request -> {
+            List<Cookie> cookies = new ArrayList<>();
+            if (request.getCookies() != null) {
+                cookies.addAll(Arrays.asList(request.getCookies()));
+            }
+            cookies.add(new Cookie("XSRF-TOKEN", XSRF_TOKEN));
+            request.setCookies(cookies.toArray(Cookie[]::new));
+            request.addHeader("X-XSRF-TOKEN", XSRF_TOKEN);
+            return request;
+        };
+    }
+
     protected static String uniqueEmail() {
         return "user-" + UUID.randomUUID() + "@example.com";
     }
 
     protected ResultActions register(String email, String password, String accountType) throws Exception {
         return mvc.perform(post("/api/v1/auth/register")
+                .with(xsrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"email": "%s", "password": "%s", "displayName": "Test User", "accountType": "%s"}
@@ -40,6 +60,7 @@ public abstract class AbstractIntegrationTest {
 
     protected ResultActions login(String email, String password) throws Exception {
         return mvc.perform(post("/api/v1/auth/login")
+                .with(xsrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"email": "%s", "password": "%s"}

@@ -6,6 +6,7 @@ import java.util.List;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
@@ -49,6 +50,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     ResponseEntity<ApiError> handleUnauthenticated(AuthenticationException ex) {
         return respond(ErrorCode.UNAUTHENTICATED, "Authentication is required.", false, List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
+        return respond(ErrorCode.FORBIDDEN, "You do not have permission to do this.", false, List.of());
     }
 
     private static ResponseEntity<ApiError> respond(

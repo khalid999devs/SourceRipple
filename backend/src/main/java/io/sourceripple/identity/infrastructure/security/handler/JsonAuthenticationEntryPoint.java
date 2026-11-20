@@ -1,4 +1,4 @@
-package io.sourceripple.identity.infrastructure.security;
+package io.sourceripple.identity.infrastructure.security.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
