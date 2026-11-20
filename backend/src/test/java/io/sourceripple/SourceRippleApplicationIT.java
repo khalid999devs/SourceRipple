@@ -27,6 +27,6 @@ class SourceRippleApplicationIT extends AbstractIntegrationTest {
         mvc.perform(get("/api/v1/projects"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("UNAUTHENTICATED"));
-        mvc.perform(post("/api/v1/projects")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/projects").with(xsrf())).andExpect(status().isUnauthorized());
     }
 }
