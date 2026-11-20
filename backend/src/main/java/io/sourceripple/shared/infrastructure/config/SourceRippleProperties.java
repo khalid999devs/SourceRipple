@@ -57,7 +57,7 @@ public record SourceRippleProperties(
 
     public record Webhooks(Duration timeout, int maxAttempts) {}
 
-    public record RateLimit(Limit login) {}
+    public record RateLimit(Limit login, Limit preview) {}
 
     public record Limit(int requests, Duration window) {}
 

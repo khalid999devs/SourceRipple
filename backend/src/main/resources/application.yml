@@ -125,6 +125,9 @@ sourceripple:
     login:
       requests: 10
       window: 15m
+    preview:
+      requests: 10
+      window: 1m
   demo:
     enabled: ${SOURCERIPPLE_DEMO_ENABLED:false}
     webhook-secret: ${SOURCERIPPLE_DEMO_WEBHOOK_SECRET:}

@@ -63,6 +63,7 @@ class UrlCanonicalizerTest {
         assertThat(url.host()).isEqualTo("127.0.0.1");
         assertThat(url.port()).isEqualTo(8080);
         assertThat(url.origin()).isEqualTo("http://127.0.0.1:8080");
+        assertThat(permissive.canonicalize("http://localhost:54321/feed.xml").port()).isEqualTo(54321);
     }
 
     @Test

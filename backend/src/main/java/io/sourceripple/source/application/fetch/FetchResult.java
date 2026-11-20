@@ -37,19 +37,26 @@ public record FetchResult(
     }
 
     public Charset charset() {
-        if (contentType != null) {
-            for (String part : contentType.split(";")) {
-                String trimmed = part.trim();
-                if (trimmed.toLowerCase(Locale.ROOT).startsWith("charset=")) {
-                    try {
-                        return Charset.forName(trimmed.substring(8).replace("\"", "").trim());
-                    } catch (IllegalArgumentException ignored) {
-                        return StandardCharsets.UTF_8;
-                    }
+        Charset declared = declaredCharset();
+        return declared == null ? StandardCharsets.UTF_8 : declared;
+    }
+
+    /** The charset from the Content-Type header, or null so a parser can detect it from the document. */
+    public Charset declaredCharset() {
+        if (contentType == null) {
+            return null;
+        }
+        for (String part : contentType.split(";")) {
+            String trimmed = part.trim();
+            if (trimmed.toLowerCase(Locale.ROOT).startsWith("charset=")) {
+                try {
+                    return Charset.forName(trimmed.substring(8).replace("\"", "").trim());
+                } catch (IllegalArgumentException unknownCharset) {
+                    return null;
                 }
             }
         }
-        return StandardCharsets.UTF_8;
+        return null;
     }
 
     public FetchResult withFinalUrl(String url, long totalDurationMs) {
