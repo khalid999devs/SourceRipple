@@ -51,7 +51,9 @@ public record SourceRippleProperties(
             int maxRedirects,
             int concurrency,
             Duration perHostGap,
-            List<Integer> allowedPorts) {}
+            List<Integer> allowedPorts,
+            List<String> allowedContentTypes,
+            DataSize largePageBytes) {}
 
     public record Webhooks(Duration timeout, int maxAttempts) {}
 

@@ -110,6 +110,14 @@ sourceripple:
     concurrency: 2
     per-host-gap: 10s
     allowed-ports: [80, 443, 8080, 8443]
+    allowed-content-types:
+      - text/html
+      - application/xhtml+xml
+      - application/rss+xml
+      - application/atom+xml
+      - application/xml
+      - text/xml
+    large-page-bytes: 1MB
   webhooks:
     timeout: 5s
     max-attempts: 6
