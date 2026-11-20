@@ -62,6 +62,10 @@ public class User {
         roles.add(role);
     }
 
+    public void recordLogin(Instant at) {
+        lastLoginAt = at;
+    }
+
     public UUID getId() {
         return id;
     }

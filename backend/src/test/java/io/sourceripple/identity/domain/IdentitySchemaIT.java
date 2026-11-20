@@ -3,22 +3,15 @@ package io.sourceripple.identity.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.sourceripple.TestcontainersConfiguration;
+import io.sourceripple.support.AbstractIntegrationTest;
 import java.time.Instant;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Import(TestcontainersConfiguration.class)
 @Transactional
-class IdentitySchemaIT {
+class IdentitySchemaIT extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository users;
@@ -61,9 +54,5 @@ class IdentitySchemaIT {
         assertThatThrownBy(() -> users.saveAndFlush(
                         new User("Mixed." + uniqueEmail(), "$2a$10$hash", "Mixed", Instant.now())))
                 .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    private static String uniqueEmail() {
-        return "user-" + UUID.randomUUID() + "@example.com";
     }
 }
