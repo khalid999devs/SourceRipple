@@ -3,25 +3,19 @@ package io.sourceripple.workspace.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.sourceripple.TestcontainersConfiguration;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
+import io.sourceripple.support.AbstractIntegrationTest;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Import(TestcontainersConfiguration.class)
 @Transactional
-class WorkspaceSchemaIT {
+class WorkspaceSchemaIT extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository users;
