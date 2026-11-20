@@ -29,4 +29,12 @@ class SourceRippleApplicationIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.error").value("UNAUTHENTICATED"));
         mvc.perform(post("/api/v1/projects").with(xsrf())).andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void apiDocsArePublicAndListTheAuthEndpoints() throws Exception {
+        mvc.perform(get("/v3/api-docs/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/auth/login']").exists())
+                .andExpect(jsonPath("$.components.securitySchemes.session").exists());
+    }
 }
