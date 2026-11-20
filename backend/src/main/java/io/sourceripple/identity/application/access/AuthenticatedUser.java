@@ -1,5 +1,6 @@
-package io.sourceripple.identity.infrastructure.security;
+package io.sourceripple.identity.application.access;
 
+import io.sourceripple.identity.domain.RoleName;
 import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
@@ -50,6 +51,11 @@ public class AuthenticatedUser implements UserDetails, CredentialsContainer {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
+    }
+
+    public boolean hasRole(RoleName role) {
+        String authority = "ROLE_" + role.name();
+        return authorities.stream().anyMatch(granted -> authority.equals(granted.getAuthority()));
     }
 
     @Override

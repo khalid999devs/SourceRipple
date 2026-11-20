@@ -1,5 +1,6 @@
 package io.sourceripple.identity.infrastructure.security;
 
+import io.sourceripple.identity.application.access.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;

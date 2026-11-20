@@ -5,7 +5,7 @@ import io.sourceripple.identity.api.dto.MeResponse;
 import io.sourceripple.identity.api.dto.RegisterRequest;
 import io.sourceripple.identity.api.dto.UserResponse;
 import io.sourceripple.identity.application.AuthService;
-import io.sourceripple.identity.infrastructure.security.AuthenticatedUser;
+import io.sourceripple.identity.application.access.AuthenticatedUser;
 import io.sourceripple.identity.infrastructure.security.SessionAuthenticator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

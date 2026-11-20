@@ -1,5 +1,6 @@
 package io.sourceripple.identity.infrastructure.security;
 
+import io.sourceripple.identity.application.access.AuthenticatedUser;
 import io.sourceripple.identity.application.EmailAddresses;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
