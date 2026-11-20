@@ -3,7 +3,7 @@ package io.sourceripple.source.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.sourceripple.source.application.fetch.SourceFetchBlockedException;
+import io.sourceripple.source.application.fetch.failure.SourceFetchBlockedException;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

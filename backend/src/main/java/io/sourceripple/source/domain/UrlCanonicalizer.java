@@ -1,6 +1,6 @@
 package io.sourceripple.source.domain;
 
-import io.sourceripple.source.application.fetch.SourceFetchBlockedException;
+import io.sourceripple.source.application.fetch.failure.SourceFetchBlockedException;
 import java.net.IDN;
 import java.net.InetAddress;
 import java.net.URI;

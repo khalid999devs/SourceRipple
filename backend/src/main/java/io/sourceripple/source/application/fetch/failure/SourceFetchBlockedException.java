@@ -1,4 +1,4 @@
-package io.sourceripple.source.application.fetch;
+package io.sourceripple.source.application.fetch.failure;
 
 import io.sourceripple.shared.api.ErrorCode;
 import io.sourceripple.shared.api.error.ApiException;
