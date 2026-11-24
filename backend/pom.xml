@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.2</version>
+        <version>4.2.0</version>
         <relativePath/>
     </parent>
 
@@ -33,7 +33,7 @@
         <jsoup.version>1.24.1</jsoup.version>
         <crawler-commons.version>1.6</crawler-commons.version>
         <java-diff-utils.version>4.18</java-diff-utils.version>
-        <springdoc.version>3.2.0</springdoc.version>
+        <springdoc.version>3.2.1</springdoc.version>
         <jacoco.version>0.8.16</jacoco.version>
     </properties>
 
