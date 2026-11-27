@@ -5,8 +5,8 @@ components below, each under its own license. Only licenses compatible with Apac
 (MIT, ISC, Apache-2.0, BSD, 0BSD, SIL OFL for fonts). This list covers direct dependencies;
 transitive dependencies are listed by `./mvnw dependency:tree` and `pnpm licenses list`.
 
-No source files have been copied from other projects. If one is copied in the future, its
-original copyright and license notice is kept in the file and recorded here.
+Source files copied from other projects are listed under "Copied source" below. When one is
+copied, its original copyright and license notice is kept and recorded here.
 
 ## Backend (bundled in the application image)
 
@@ -51,12 +51,17 @@ original copyright and license notice is kept in the file and recorded here.
 | clsx | MIT |
 | tailwind-merge | MIT |
 | class-variance-authority | Apache-2.0 |
-| Radix UI (Slot) | MIT |
-| shadcn/ui component patterns | MIT |
+| Radix UI primitives (Dialog, Dropdown Menu, Label, Popover, Slot, Tabs, Tooltip) | MIT |
 | lucide-react | ISC |
 | Sonner | MIT |
 | Motion | MIT |
 | Geist Sans and Geist Mono fonts (via Fontsource) | SIL Open Font License 1.1 |
+
+## Copied source
+
+| Component | Where | License |
+|---|---|---|
+| shadcn/ui components (button, input, label, dialog, sheet, dropdown-menu, tabs, tooltip, popover, badge, skeleton, sonner), Copyright (c) 2023 shadcn | `frontend/src/components/ui/`, adapted to the Midnight tokens | MIT |
 
 ## Frontend (build and development tools, not distributed)
 
