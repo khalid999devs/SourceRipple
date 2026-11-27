@@ -32,6 +32,19 @@ class CsrfProtectionIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void loginIssuesAFreshXsrfToken() throws Exception {
+        String email = uniqueEmail();
+        register(email, PASSWORD, "MAINTAINER").andExpect(status().isCreated());
+
+        Cookie[] cookies = login(email, PASSWORD).andExpect(status().isOk()).andReturn().getResponse().getCookies();
+
+        assertThat(cookies)
+                .filteredOn(cookie -> cookie.getName().equals("XSRF-TOKEN") && !cookie.getValue().isEmpty())
+                .singleElement()
+                .satisfies(cookie -> assertThat(cookie.getValue()).isNotEqualTo(XSRF_TOKEN));
+    }
+
+    @Test
     void cookieToHeaderRoundTripIsAccepted() throws Exception {
         Cookie token = mvc.perform(get("/api/v1/auth/me")).andReturn().getResponse().getCookie("XSRF-TOKEN");
         String email = uniqueEmail();

@@ -35,7 +35,7 @@ public abstract class AbstractIntegrationTest {
 
     protected static final String PASSWORD = "correct-horse-battery";
 
-    private static final String XSRF_TOKEN = "integration-test-xsrf-token";
+    protected static final String XSRF_TOKEN = "integration-test-xsrf-token";
 
     @Autowired
     protected MockMvc mvc;

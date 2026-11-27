@@ -1,6 +1,7 @@
 package io.sourceripple.identity.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -20,6 +21,8 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -75,6 +78,16 @@ class BootstrapAdminInitializerTest {
         when(users.existsByEmailIgnoreCase("admin@example.com")).thenReturn(true);
 
         initializer("admin@example.com", "admin-password-1").run(null);
+
+        verify(users, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"short-pw", "ééééééééééééééééééééééééééééééééééééé"})
+    void refusesAPasswordBcryptCannotUse(String password) {
+        assertThatThrownBy(() -> initializer("admin@example.com", password).run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("SOURCERIPPLE_ADMIN_PASSWORD");
 
         verify(users, never()).save(any());
     }
