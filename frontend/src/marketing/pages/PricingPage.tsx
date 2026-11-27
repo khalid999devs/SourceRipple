@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { useDocumentTitle } from '@/hooks/use-document-title';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { PlanCard } from '@/marketing/components/PlanCard';
 import { PLANS, type BillingPeriod } from '@/marketing/plans';
 

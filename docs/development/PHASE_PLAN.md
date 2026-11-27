@@ -6,9 +6,9 @@ Derived from PRD §21 (team, phases, calendar, collaboration, scope cuts) and §
 
 | Member | GitHub | Phases led | Role in other phases |
 |---|---|---|---|
-| **Lead** (repository owner) | `khalid999devs` | 1, 8–11 | Reviews Ajoy's PRs (alternating with Imrul); demo kit in Phase 5; pairs on I9 in Phase 6 |
+| **Khalid** (Lead, repository owner) | `khalid999devs` | 1, 8–11 (10 and 11 alone) | Frontend foundation in Phase 3; reviews Ajoy's PRs (alternating with Imrul); demo kit in Phase 5; pairs on I9 in Phase 6 |
 | **Ajoy** | `ajoycodes` | 2–7 | Reviews in 8–11; core bug fixes; pattern class diagrams (Phase 10); production smoke tests (Phase 11) |
-| **Imrul** | `kayes2207054` | 8–10 (with Lead) | Frontend foundation in Phase 3; reviews UI conventions in Phase 7; Cloud Run and docs in Phase 11 |
+| **Imrul** | `kayes2207054` | 8–9 (with Lead) | Reviews Ajoy's PRs (alternating with Lead) and the Phase 3 frontend; reviews UI conventions in Phase 7; reviews in 10–11 |
 
 ## Phases at a glance
 
@@ -16,15 +16,15 @@ Derived from PRD §21 (team, phases, calendar, collaboration, scope cuts) and §
 |---|---|---|---|---|---|---|
 | 1 | [Foundation and scaffolding](phases/foundation/phase-01-foundation.md) | Lead | Ajoy, Imrul verify locally | — | §15.1–§15.3 (no deploy jobs), §16, §17.1, Q1–Q6 | Protected `main`/`develop`; CI green on the empty app; `docker compose up --build` starts app and db; every member has cloned the repo, run `scripts/setup-git-hooks.sh` and started the stack locally |
 | 2 | [Data model, identity and access](phases/core/phase-02-identity-access.md) | Ajoy | Lead reviews | 1 | §6, §9, FR-AUTH, FR-ADM-1, NFR-SEC-2/3 | RBAC and auth tests green in CI |
-| 3 | [Workspace and API foundation](phases/core/phase-03-workspace-api-frontend.md) | Ajoy | **Imrul:** frontend foundation (§8.2–§8.4, S2, S15) | 2 | FR-ORG, FR-PRJ, FR-API | CRUD and error envelope green; login and logout work in the SPA |
+| 3 | [Workspace and API foundation](phases/core/phase-03-workspace-api-frontend.md) | Ajoy | **Lead:** frontend foundation (§8.2–§8.4, S2, S15) | 2 | FR-ORG, FR-PRJ, FR-API | CRUD and error envelope green; login and logout work in the SPA |
 | 4 | [Safe fetching and extraction](phases/core/phase-04-safe-fetch-extraction.md) | Ajoy | Lead reviews | 3 | NFR-SEC-1, FR-EXT-1..4, FR-WCH-1, FR-MON-7 | Preview returns sections for HTML and RSS; private targets blocked |
 | 5 | [Monitoring engine and watches](phases/core/phase-05-monitoring-watches.md) | Ajoy | **Lead:** demo kit (FR-DEMO-1..6) | 4 | FR-WCH-2..7, FR-EXT-5, FR-MON, FR-DEMO | Fixture watched, baseline READY, a re-check creates no duplicate version |
 | 6 | [Change detection, dependencies, impacts](phases/core/phase-06-changes-impacts.md) | Ajoy | Lead pairs on I9 | 5 | FR-EXT-6..9, FR-DEP, FR-IMP | **Golden flow (Appendix A version, change and impact results) green in CI**; webhook and MCP results verified in Phase 8 |
 | 7 | [Baseline product screens](phases/core/phase-07-baseline-screens.md) | Ajoy | Imrul reviews UI conventions | 3 (shells), 6 | §8.5 S3–S8, S9 (table), S10, S14 | The whole core loop is usable in the browser end to end |
 | 8 | [Integrations and admin](phases/additions/phase-08-integrations-admin.md) | Imrul + Lead | Ajoy reviews | 6 | FR-NTF, FR-WHK (incl. extending the Phase 6 transaction), FR-KEY, FR-MCP, FR-ADM-2..4, S11–S13 | Signed webhook DELIVERED to the demo receiver; admin console works |
 | 9 | [Observability and marketing site](phases/additions/phase-09-observability-marketing.md) | Lead + Imrul | Ajoy reviews | 6 (start gate), 3 | §18, FR-WEB, §8.6 | Grafana dashboard live through Compose; landing and pricing reach Lighthouse ≥ 90 locally |
-| 10 | [Polish and hardening](phases/additions/phase-10-polish-hardening.md) | Imrul + Lead | **Ajoy:** core bug fixes, pattern diagrams | 8, 9 | §8.4–§8.5, §11.5, §14, §20 | All P0 and P1 items done except deployment; CI green |
-| 11 | [Deployments and release](phases/release/phase-11-deployments.md) | Lead | **Imrul:** Cloud Run + docs; **Ajoy:** prod smoke tests | 10 | §15.3 deploy jobs, §17, §20.1 item 10, §20.2 | Both public URLs serve the release SHA; golden flow passes on Render; demo rehearsed |
+| 10 | [Polish and hardening](phases/additions/phase-10-polish-hardening.md) | Lead | **Ajoy:** core bug fixes, pattern diagrams | 8, 9 | §8.4–§8.5, §11.5, §14, §20 | All P0 and P1 items done except deployment; CI green |
+| 11 | [Deployments and release](phases/release/phase-11-deployments.md) | Lead | **Ajoy:** prod smoke tests; Imrul reviews | 10 | §15.3 deploy jobs, §17, §20.1 item 10, §20.2 | Both public URLs serve the release SHA; golden flow passes on Render; demo rehearsed |
 
 ## Dependency graph
 
@@ -32,7 +32,7 @@ Derived from PRD §21 (team, phases, calendar, collaboration, scope cuts) and §
 flowchart LR
   P1[1 Foundation<br/>Lead] --> P2[2 Identity & access<br/>Ajoy]
   P2 --> P3[3 Workspace & API<br/>Ajoy]
-  P2 --> P3F[3 Frontend foundation<br/>Imrul]
+  P2 --> P3F[3 Frontend foundation<br/>Lead]
   P3 --> P4[4 Safe fetch & extraction<br/>Ajoy]
   P4 --> P5[5 Monitoring & watches<br/>Ajoy]
   P4 --> P5D[5 Demo kit<br/>Lead]
@@ -43,7 +43,7 @@ flowchart LR
   P6 --> P8[8 Integrations & admin<br/>Imrul + Lead]
   P6 --> P9[9 Observability & marketing<br/>Lead + Imrul]
   P3F --> P9
-  P7 --> P10[10 Polish & hardening]
+  P7 --> P10[10 Polish & hardening<br/>Lead]
   P8 --> P10
   P9 --> P10
   P10 --> P11[11 Deployments & release<br/>Lead]
@@ -53,24 +53,19 @@ Phases 8 and 9 may overlap Phase 7, because different people own them (PRD §21.
 
 ## Calendar (PRD §21.3)
 
-Exact dates come once Q4 (submission and demo dates) is answered. Until then, use the blueprint's five weeks:
+The full build fits in **2 weeks**. Exact dates follow the submission date (Q4).
 
 | Week | Phases | Notes |
 |---|---|---|
-| 1 | 1, 2, start of 3 | Protection on day 1 after the initial scaffold commit |
-| 2 | 3 (backend + frontend foundation), 4 | Imrul's frontend foundation runs alongside Ajoy |
-| 3 | 5, 6 | Phase 6 exit (golden flow in CI) is the core-loop milestone |
-| 4 | 7, 8, 9 | 8 and 9 run in parallel with 7 |
-| 5 | 10, 11 | Phase 11 **starts at least 5 days before submission** |
-
-When Q4 is answered, the Lead replaces the week column with dates in the GitHub Projects board milestones (not in this file).
+| 1 | 1 (done), 2, 3, 4, 5 | Ajoy on the core; Khalid builds the Phase 3 frontend foundation and the demo kit, and reviews |
+| 2 | 6, 7 (Ajoy) overlapping 8, 9 (Khalid, Imrul), then 10 and 11 | Phase 11 starts at least 5 days before submission |
 
 ## Review rotation (PRD §21.4)
 
 - Nobody approves their own work. Every PR needs ≥ 1 approval from another member.
 - Phases 2–7: Ajoy's PRs **alternate** between Lead and Imrul. Odd-numbered PRs in a phase go to Lead, even-numbered to Imrul. UI PRs in Phase 7 always include Imrul.
-- Phases 8–11: Lead and Imrul review each other; Ajoy reviews at least one PR from each of them per phase.
-- Parallel tasks: Imrul's Phase 3 PRs are reviewed by Lead; Lead's Phase 5 demo-kit PRs are reviewed by Ajoy.
+- Phases 8–9: Lead and Imrul review each other; Phases 10–11: Imrul and Ajoy review the Lead; Ajoy reviews at least one PR from each of them per phase.
+- Parallel tasks: the Lead's Phase 3 frontend PRs are reviewed by Imrul; Lead's Phase 5 demo-kit PRs are reviewed by Ajoy.
 
 ## Collaboration minimums (PRD §21.4)
 
@@ -89,7 +84,7 @@ Every PR states its phase and PRD IDs (see [README](README.md#traceability-conve
 Deploying in Phase 11 is a team choice. These keep the "App not deployed" automatic fail from ever being at risk:
 
 - [ ] Phase 1: the production image is built and smoke-tested in the CI `docker` job on every PR.
-- [ ] Phase 1: Render, Neon (projects A and B) and GCP accounts exist; Q2 and Q3 answered.
+- [ ] Phase 1: Render, Neon and GCP accounts exist; Q3 answered.
 - [ ] §17 and [guides/deployment-runbook.md](guides/operations/deployment-runbook.md) hold the exact steps before Phase 11.
 - [ ] Phase 11 starts **at least 5 days before submission**. The Lead puts this date on the board in Phase 1.
 - [ ] An optional one-off smoke deploy is allowed at any earlier point (for example after Phase 6).

@@ -5,7 +5,7 @@ Organizations, members and projects have full CRUD behind the access rules. Ever
 
 ## People
 - **Owner (backend):** Ajoy. Reviewers alternate Imrul / Lead.
-- **Parallel (frontend foundation):** Imrul. Reviewer: Lead.
+- **Parallel (frontend foundation):** Lead. Reviewer: Imrul.
 
 ## Prerequisites
 - Phase 2 exit criteria met (auth, sessions, CSRF, `AccessPolicy`, I1–I3 and I5 green).
@@ -34,7 +34,7 @@ FR-ORG-1..3 · FR-PRJ-1..2 · R5, R6 · FR-API-1..4 · §10.1–§10.3 (Organiza
 - [ ] `GET /projects/{id}/summary` (FR-PRJ-2) via `ProjectSummaryContributor` port; returns zeros until Phase 5 (watches, failing sources, last check) and Phase 6 (impacts by status) add contributors.
 - [ ] `workspace/api/ProjectController.java` (§10.3); 201 with `Location`; archive → 204.
 
-## Ordered task checklist — frontend foundation (Imrul)
+## Ordered task checklist — frontend foundation (Lead)
 Follow [frontend-conventions.md](../../guides/engineering/frontend-conventions.md).
 
 - [ ] Tailwind CSS v4 with `@theme` Midnight tokens in `src/styles/globals.css` (§8.3), dark by default (`class="dark"` on `<html>` in `index.html`, no inline script).
@@ -56,9 +56,8 @@ Follow [frontend-conventions.md](../../guides/engineering/frontend-conventions.m
 | 1 | `feature/p3-api-foundation` | Ajoy | A, I15 | Imrul |
 | 2 | `feature/p3-organizations` | Ajoy | B, U4, U5 | Lead |
 | 3 | `feature/p3-projects` | Ajoy | C, U6, I7 | Imrul |
-| 4 | `feature/p3-web-tokens-shells` | Imrul | tokens, fonts, shadcn, shells, router, guards | Lead |
-| 5 | `feature/p3-web-api-client` | Imrul | generated client, CSRF middleware, providers, stores | Lead |
-| 6 | `feature/p3-web-auth-pages` | Imrul | S2, S15 | Lead (Ajoy optional) |
+| 4 | `feature/p3-web-tokens-shells` | Lead | tokens, fonts, shadcn, shells, router, guards, S15 | Imrul |
+| 5 | `feature/p3-web-auth` | Lead | generated client, CSRF middleware, providers, stores, S2 | Imrul |
 
 ## Tests to write
 | ID | Class | Intent |

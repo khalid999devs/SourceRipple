@@ -1,7 +1,7 @@
 server:
   port: ${PORT:8080}
   shutdown: graceful
-  forward-headers-strategy: framework
+  forward-headers-strategy: native
   tomcat:
     threads:
       max: 20
@@ -30,11 +30,9 @@ spring:
     enabled: true
     locations: classpath:db/migration
   session:
-    timeout: 7d
+    timeout: 8h
     jdbc:
       initialize-schema: never
-      # The spring_session tables do not exist yet, so the expiry cleanup job stays off.
-      cleanup-cron: "-"
 
 management:
   endpoints:
@@ -93,13 +91,14 @@ sourceripple:
     tick-budget: 60s
     claim-batch: 10
     lease: 5m
+  workspace:
+    max-organizations-per-user: 5
   watches:
     default-interval-hours: 24
     min-interval-hours: ${SOURCERIPPLE_MIN_INTERVAL_HOURS:6}
     versions-retained: 10
     max-per-project: 20
     max-per-organization: 100
-    max-organizations-per-user: 5
     max-active-sources: 200
   fetch:
     allow-private-targets: ${SOURCERIPPLE_FETCH_ALLOW_PRIVATE_TARGETS:false}
@@ -112,9 +111,24 @@ sourceripple:
     concurrency: 2
     per-host-gap: 10s
     allowed-ports: [80, 443, 8080, 8443]
+    allowed-content-types:
+      - text/html
+      - application/xhtml+xml
+      - application/rss+xml
+      - application/atom+xml
+      - application/xml
+      - text/xml
+    large-page-bytes: 1MB
   webhooks:
     timeout: 5s
     max-attempts: 6
+  rate-limit:
+    login:
+      requests: 10
+      window: 15m
+    preview:
+      requests: 10
+      window: 1m
   demo:
     enabled: ${SOURCERIPPLE_DEMO_ENABLED:false}
     webhook-secret: ${SOURCERIPPLE_DEMO_WEBHOOK_SECRET:}

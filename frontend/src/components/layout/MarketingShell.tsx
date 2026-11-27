@@ -1,12 +1,12 @@
 import { Link, NavLink, Outlet } from 'react-router';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/form/button';
 
 const NAV_LINKS = [{ to: '/pricing', label: 'Pricing' }] as const;
 
 export function MarketingShell() {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur">
         <nav
           aria-label="Main"

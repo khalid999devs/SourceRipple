@@ -1,0 +1,84 @@
+package io.sourceripple.identity.application.access;
+
+import io.sourceripple.identity.domain.RoleName;
+import io.sourceripple.shared.api.error.status.ForbiddenException;
+import io.sourceripple.shared.api.error.status.NotFoundException;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
+@Component("access")
+public class AccessPolicy {
+
+    private final MembershipLookup memberships;
+    private final Map<ResourceType, OrganizationResolver> resolvers = new EnumMap<>(ResourceType.class);
+
+    public AccessPolicy(MembershipLookup memberships, List<OrganizationResolver> organizationResolvers) {
+        this.memberships = memberships;
+        organizationResolvers.forEach(resolver -> resolvers.put(resolver.resourceType(), resolver));
+    }
+
+    public void requireMember(UUID organizationId) {
+        requireMembership(organizationId, currentUser());
+    }
+
+    public void requireOwner(UUID organizationId) {
+        AuthenticatedUser user = currentUser();
+        requireMembership(organizationId, user);
+        if (!memberships.isOwner(organizationId, user.getId())) {
+            throw new ForbiddenException("Only the organization owner can do this.");
+        }
+    }
+
+    public void requireProjectMember(UUID projectId) {
+        requireMembership(resolve(ResourceType.PROJECT, projectId), currentUser());
+    }
+
+    public void requireProjectWriter(UUID projectId) {
+        AuthenticatedUser user = currentUser();
+        requireMembership(resolve(ResourceType.PROJECT, projectId), user);
+        requireRole(user, RoleName.MAINTAINER);
+    }
+
+    public boolean canWriteProject(UUID projectId) {
+        requireProjectWriter(projectId);
+        return true;
+    }
+
+    public UUID resolve(ResourceType type, UUID resourceId) {
+        OrganizationResolver resolver = resolvers.get(type);
+        if (resolver == null || resourceId == null) {
+            throw notFound();
+        }
+        return resolver.organizationOf(resourceId).orElseThrow(AccessPolicy::notFound);
+    }
+
+    private void requireMembership(UUID organizationId, AuthenticatedUser user) {
+        if (organizationId == null || !memberships.isMember(organizationId, user.getId())) {
+            throw notFound();
+        }
+    }
+
+    private static void requireRole(AuthenticatedUser user, RoleName role) {
+        if (!user.hasRole(role)) {
+            throw new ForbiddenException("This action requires the " + role + " role.");
+        }
+    }
+
+    private static AuthenticatedUser currentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser user)) {
+            throw new InsufficientAuthenticationException("Authentication is required.");
+        }
+        return user;
+    }
+
+    private static NotFoundException notFound() {
+        return new NotFoundException("The resource was not found.");
+    }
+}

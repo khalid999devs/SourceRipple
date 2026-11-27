@@ -13,22 +13,22 @@ This is a single living set of documents. Git history is the change record, so t
 | [PHASE_PLAN.md](PHASE_PLAN.md) | All 11 phases: owners, dependencies, calendar, reviews, scope cuts, test-ID ownership |
 | [phases/phase-01-foundation.md](phases/foundation/phase-01-foundation.md) | Repo, protection, CI, Docker/Compose, accounts (Lead) |
 | [phases/phase-02-identity-access.md](phases/core/phase-02-identity-access.md) | Data model base, auth, roles, `AccessPolicy`, filter chains (Ajoy) |
-| [phases/phase-03-workspace-api-frontend.md](phases/core/phase-03-workspace-api-frontend.md) | Organizations, projects, error envelope, OpenAPI (Ajoy) and frontend foundation (Imrul) |
+| [phases/phase-03-workspace-api-frontend.md](phases/core/phase-03-workspace-api-frontend.md) | Organizations, projects, error envelope, OpenAPI (Ajoy) and frontend foundation (Lead) |
 | [phases/phase-04-safe-fetch-extraction.md](phases/core/phase-04-safe-fetch-extraction.md) | SSRF guard, adapters, factory, Flyweight, preview (Ajoy) |
 | [phases/phase-05-monitoring-watches.md](phases/core/phase-05-monitoring-watches.md) | Watches, monitoring engine, tick (Ajoy) and demo kit (Lead) |
 | [phases/phase-06-changes-impacts.md](phases/core/phase-06-changes-impacts.md) | Versioning, section diff, dependencies, impacts, golden flow (Ajoy, Lead pairs on I9) |
 | [phases/phase-07-baseline-screens.md](phases/core/phase-07-baseline-screens.md) | Functional core-loop screens (Ajoy) |
 | [phases/phase-08-integrations-admin.md](phases/additions/phase-08-integrations-admin.md) | Notifications, webhooks, API keys, MCP, admin (Imrul and Lead) |
 | [phases/phase-09-observability-marketing.md](phases/additions/phase-09-observability-marketing.md) | Actuator, Prometheus, Grafana, waitlist (Lead) and marketing site (Imrul) |
-| [phases/phase-10-polish-hardening.md](phases/additions/phase-10-polish-hardening.md) | UI polish (Imrul), test audit, security review, README (Lead), diagrams (Ajoy) |
-| [phases/phase-11-deployments.md](phases/release/phase-11-deployments.md) | Render, Cloud Run, deploy jobs, runbook, release (Lead, Imrul, Ajoy) |
+| [phases/phase-10-polish-hardening.md](phases/additions/phase-10-polish-hardening.md) | UI polish, test audit, security review, README (Lead), diagrams (Ajoy) |
+| [phases/phase-11-deployments.md](phases/release/phase-11-deployments.md) | Render, Cloud Run, deploy jobs, runbook, release (Lead, smoke tests by Ajoy) |
 | [guides/architecture.md](guides/engineering/architecture.md) | Module map, internal layout, layering, execution model, pattern placement |
 | [guides/backend-conventions.md](guides/engineering/backend-conventions.md) | Naming, DTOs, validation, errors, transactions, security annotations, config, Flyway plan |
 | [guides/frontend-conventions.md](guides/engineering/frontend-conventions.md) | Folder layout, shells, routing, Query vs Zustand, API client, tokens, a11y and performance |
 | [guides/testing.md](guides/engineering/testing.md) | Unit and integration test recipes, MockWebServer, Surefire/Failsafe, JaCoCo, failing-then-fixed evidence |
 | [guides/git-and-ci.md](guides/operations/git-and-ci.md) | Repo bootstrap, protection click-path, PRs, release flow, CI jobs, secrets |
 | [guides/local-setup-and-environments.md](guides/operations/local-setup-and-environments.md) | Prerequisites, Compose, running apps separately, profiles, env vars, demo accounts |
-| [guides/deployment-runbook.md](guides/operations/deployment-runbook.md) | Render + Neon, Cloud Run + Neon, verification, demo-day runbook |
+| [guides/deployment-runbook.md](guides/operations/deployment-runbook.md) | Render + Render Postgres, Cloud Run + Neon, verification, demo-day runbook |
 | [handoffs/ajoy-phases-2-7.md](handoffs/ajoy-phases-2-7.md) | Paste-ready implementation brief for Phases 2–7 |
 
 ## Traceability conventions
