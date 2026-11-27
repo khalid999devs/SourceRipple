@@ -2,12 +2,17 @@ import { createBrowserRouter } from 'react-router';
 
 import { RequireAuth } from '@/app/guards/RequireAuth';
 import { RequireRole } from '@/app/guards/RequireRole';
-import { NotFoundPage } from '@/components/shared/NotFoundPage';
+import { NotFoundPage } from '@/app/pages/NotFoundPage';
+import { RouteErrorBoundary } from '@/app/pages/RouteErrorBoundary';
+import type { CrumbHandle } from '@/components/layout/top-bar/Breadcrumbs';
 import { RouteFallback } from '@/components/shared/RouteFallback';
+
+const crumb = (label: string): CrumbHandle => ({ crumb: label });
 
 export const router = createBrowserRouter([
   {
     HydrateFallback: RouteFallback,
+    ErrorBoundary: RouteErrorBoundary,
     children: [
       {
         lazy: () =>
@@ -54,9 +59,11 @@ export const router = createBrowserRouter([
           {
             lazy: () =>
               import('@/components/layout/AppShell').then((m) => ({ Component: m.AppShell })),
+            ErrorBoundary: RouteErrorBoundary,
             children: [
               {
                 index: true,
+                handle: crumb('Overview'),
                 lazy: () =>
                   import('@/features/overview/pages/OverviewPage').then((m) => ({
                     Component: m.OverviewPage,
@@ -64,6 +71,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'onboarding',
+                handle: crumb('Get started'),
                 lazy: () =>
                   import('@/features/onboarding/pages/OnboardingPage').then((m) => ({
                     Component: m.OnboardingPage,
@@ -71,55 +79,78 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'projects',
-                lazy: () =>
-                  import('@/features/projects/pages/ProjectsPage').then((m) => ({
-                    Component: m.ProjectsPage,
-                  })),
-              },
-              {
-                path: 'projects/:projectId',
-                lazy: () =>
-                  import('@/features/projects/pages/ProjectDetailPage').then((m) => ({
-                    Component: m.ProjectDetailPage,
-                  })),
+                handle: crumb('Projects'),
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import('@/features/projects/pages/ProjectsPage').then((m) => ({
+                        Component: m.ProjectsPage,
+                      })),
+                  },
+                  {
+                    path: ':projectId',
+                    handle: crumb('Project'),
+                    lazy: () =>
+                      import('@/features/projects/pages/ProjectDetailPage').then((m) => ({
+                        Component: m.ProjectDetailPage,
+                      })),
+                  },
+                ],
               },
               {
                 path: 'watches',
-                lazy: () =>
-                  import('@/features/watches/pages/WatchesPage').then((m) => ({
-                    Component: m.WatchesPage,
-                  })),
-              },
-              {
-                path: 'watches/new',
-                lazy: () =>
-                  import('@/features/watches/pages/NewWatchPage').then((m) => ({
-                    Component: m.NewWatchPage,
-                  })),
-              },
-              {
-                path: 'watches/:watchId',
-                lazy: () =>
-                  import('@/features/watches/pages/WatchDetailPage').then((m) => ({
-                    Component: m.WatchDetailPage,
-                  })),
+                handle: crumb('Sources'),
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import('@/features/watches/pages/WatchesPage').then((m) => ({
+                        Component: m.WatchesPage,
+                      })),
+                  },
+                  {
+                    path: 'new',
+                    handle: crumb('New watch'),
+                    lazy: () =>
+                      import('@/features/watches/pages/NewWatchPage').then((m) => ({
+                        Component: m.NewWatchPage,
+                      })),
+                  },
+                  {
+                    path: ':watchId',
+                    handle: crumb('Watch'),
+                    lazy: () =>
+                      import('@/features/watches/pages/WatchDetailPage').then((m) => ({
+                        Component: m.WatchDetailPage,
+                      })),
+                  },
+                ],
               },
               {
                 path: 'changes',
-                lazy: () =>
-                  import('@/features/changes/pages/ChangesPage').then((m) => ({
-                    Component: m.ChangesPage,
-                  })),
-              },
-              {
-                path: 'changes/:changeId',
-                lazy: () =>
-                  import('@/features/changes/pages/ChangeDetailPage').then((m) => ({
-                    Component: m.ChangeDetailPage,
-                  })),
+                handle: crumb('Changes'),
+                children: [
+                  {
+                    index: true,
+                    lazy: () =>
+                      import('@/features/changes/pages/ChangesPage').then((m) => ({
+                        Component: m.ChangesPage,
+                      })),
+                  },
+                  {
+                    path: ':changeId',
+                    handle: crumb('Change'),
+                    lazy: () =>
+                      import('@/features/changes/pages/ChangeDetailPage').then((m) => ({
+                        Component: m.ChangeDetailPage,
+                      })),
+                  },
+                ],
               },
               {
                 path: 'dependencies',
+                handle: crumb('Dependency Map'),
                 lazy: () =>
                   import('@/features/dependencies/pages/DependencyMapPage').then((m) => ({
                     Component: m.DependencyMapPage,
@@ -127,6 +158,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'impacts',
+                handle: crumb('Impact Inbox'),
                 lazy: () =>
                   import('@/features/impacts/pages/ImpactInboxPage').then((m) => ({
                     Component: m.ImpactInboxPage,
@@ -134,6 +166,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'integrations',
+                handle: crumb('Integrations'),
                 lazy: () =>
                   import('@/features/integrations/pages/IntegrationsPage').then((m) => ({
                     Component: m.IntegrationsPage,
@@ -141,6 +174,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'notifications',
+                handle: crumb('Notifications'),
                 lazy: () =>
                   import('@/features/notifications/pages/NotificationsPage').then((m) => ({
                     Component: m.NotificationsPage,
@@ -148,6 +182,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'settings',
+                handle: crumb('Settings'),
                 lazy: () =>
                   import('@/features/settings/pages/SettingsPage').then((m) => ({
                     Component: m.SettingsPage,
@@ -155,6 +190,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'admin',
+                handle: crumb('Admin'),
                 element: <RequireRole role="ADMIN" />,
                 children: [
                   {
@@ -166,6 +202,7 @@ export const router = createBrowserRouter([
                   },
                 ],
               },
+              { path: '*', Component: NotFoundPage },
             ],
           },
         ],

@@ -1,11 +1,19 @@
 import { Outlet } from 'react-router';
 
-import type { Role } from '@/lib/roles';
+import { ForbiddenPage } from '@/app/pages/ForbiddenPage';
+import { useMe } from '@/features/auth/api';
+import { hasRole, type Role } from '@/lib/roles';
 
 interface RequireRoleProps {
   role: Role;
 }
 
 export function RequireRole({ role }: RequireRoleProps) {
-  return <Outlet context={{ requiredRole: role }} />;
+  const { data: me } = useMe();
+
+  if (!hasRole(me?.roles, role)) {
+    return <ForbiddenPage role={role} />;
+  }
+
+  return <Outlet />;
 }
