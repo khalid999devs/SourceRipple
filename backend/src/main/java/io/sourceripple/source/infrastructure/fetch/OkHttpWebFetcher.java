@@ -13,8 +13,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.net.Proxy;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
+import okhttp3.Call;
 import okhttp3.Dns;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -28,7 +31,7 @@ public class OkHttpWebFetcher implements WebFetcher {
 
     private static final String PAGE_ACCEPT = "text/html,application/xhtml+xml,application/rss+xml,"
             + "application/atom+xml,application/xml;q=0.9,text/xml;q=0.9";
-    private static final long READ_CHUNK = 8 * 1024;
+    private static final int READ_CHUNK = 8 * 1024;
 
     private final OkHttpClient client;
     private final GlobalFetchLimits limits;
@@ -39,6 +42,7 @@ public class OkHttpWebFetcher implements WebFetcher {
         this.userAgent = userAgent;
         // Redirects are followed by the proxy so every hop is validated again.
         this.client = new OkHttpClient.Builder()
+                .proxy(Proxy.NO_PROXY)
                 .dns(dns)
                 .addNetworkInterceptor(networkInterceptor)
                 .followRedirects(false)
@@ -65,7 +69,12 @@ public class OkHttpWebFetcher implements WebFetcher {
         if (request.lastModified() != null) {
             builder.header("If-Modified-Since", request.lastModified());
         }
-        try (Response response = client.newCall(builder.build()).execute()) {
+
+        Call call = client.newCall(builder.build());
+        if (request.timeout() != null) {
+            call.timeout().timeout(request.timeout().toNanos(), TimeUnit.NANOSECONDS);
+        }
+        try (Response response = call.execute()) {
             return toResult(request, response, started);
         } catch (IOException e) {
             throw translate(e);
@@ -134,7 +143,7 @@ public class OkHttpWebFetcher implements WebFetcher {
         }
         try (InputStream gzip = new GZIPInputStream(new ByteArrayInputStream(wire.readByteArray()))) {
             ByteArrayOutputStream decoded = new ByteArrayOutputStream();
-            byte[] chunk = new byte[(int) READ_CHUNK];
+            byte[] chunk = new byte[READ_CHUNK];
             int read;
             while ((read = gzip.read(chunk)) != -1) {
                 decoded.write(chunk, 0, read);
@@ -151,19 +160,26 @@ public class OkHttpWebFetcher implements WebFetcher {
     }
 
     private static RuntimeException translate(IOException e) {
-        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
-            if (cause instanceof GuardedDns.BlockedAddressException) {
-                return new SourceFetchBlockedException("This URL resolves to a disallowed destination.");
-            }
-            for (Throwable suppressed : cause.getSuppressed()) {
-                if (suppressed instanceof GuardedDns.BlockedAddressException) {
-                    return new SourceFetchBlockedException("This URL resolves to a disallowed destination.");
-                }
-            }
+        if (isBlocked(e)) {
+            return new SourceFetchBlockedException("This URL resolves to a disallowed destination.");
         }
         if (e instanceof InterruptedIOException) {
             return SourceFetchFailedException.retryable("The site did not answer in time.");
         }
         return SourceFetchFailedException.retryable("The site could not be reached.");
+    }
+
+    private static boolean isBlocked(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof GuardedDns.BlockedAddressException) {
+                return true;
+            }
+            for (Throwable suppressed : cause.getSuppressed()) {
+                if (suppressed instanceof GuardedDns.BlockedAddressException) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
