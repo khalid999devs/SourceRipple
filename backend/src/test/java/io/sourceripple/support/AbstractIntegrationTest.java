@@ -110,6 +110,7 @@ public abstract class AbstractIntegrationTest {
         User admin = new User(email, passwordEncoder.encode(PASSWORD), "Admin", Instant.now());
         admin.addRole(roleRepository.findByName(RoleName.ADMIN).orElseThrow());
         userRepository.save(admin);
+
         return sessionCookie(login(email, PASSWORD).andExpect(status().isOk()));
     }
 

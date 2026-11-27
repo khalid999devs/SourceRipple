@@ -57,6 +57,7 @@ class MembershipServiceTest {
     @BeforeEach
     void setUp() {
         service = new MembershipService(organizations, accounts, access, entityManager);
+
         User owner = user(OWNER_ID);
         member = user(MEMBER_ID);
         organization = new Organization(owner, "Acme", Instant.now());

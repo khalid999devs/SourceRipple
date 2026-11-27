@@ -91,6 +91,7 @@ public class OkHttpWebFetcher implements WebFetcher {
             wireBytes = wire.size();
             body = decode(wire, response.header("Content-Encoding"));
         }
+
         return new FetchResult(
                 response.code(),
                 request.url(),
@@ -120,6 +121,7 @@ public class OkHttpWebFetcher implements WebFetcher {
         if (body.contentLength() > cap) {
             throw tooLarge(cap);
         }
+
         Buffer buffer = new Buffer();
         BufferedSource source = body.source();
         while (source.read(buffer, READ_CHUNK) != -1) {
@@ -141,6 +143,7 @@ public class OkHttpWebFetcher implements WebFetcher {
         if (!contentEncoding.trim().equalsIgnoreCase("gzip")) {
             throw SourceFetchFailedException.permanent("The response uses an unsupported encoding.");
         }
+
         try (InputStream gzip = new GZIPInputStream(new ByteArrayInputStream(wire.readByteArray()))) {
             ByteArrayOutputStream decoded = new ByteArrayOutputStream();
             byte[] chunk = new byte[READ_CHUNK];

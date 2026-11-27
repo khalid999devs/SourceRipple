@@ -72,9 +72,11 @@ class WatchPreviewIT extends AbstractIntegrationTest {
         preview(maintainer, url("/logo.png"))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error").value("UNSUPPORTED_CONTENT"));
+
         preview(maintainer, "ftp://vendor.example/payments")
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error").value("SOURCE_FETCH_BLOCKED"));
+
         preview(maintainer, url("/missing"))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error").value("SOURCE_FETCH_FAILED"));

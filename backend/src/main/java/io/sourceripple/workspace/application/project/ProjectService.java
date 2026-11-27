@@ -112,6 +112,7 @@ public class ProjectService {
         if (!taken.contains(base)) {
             return base;
         }
+
         int suffix = 2;
         while (taken.contains(base + "-" + suffix)) {
             suffix++;
