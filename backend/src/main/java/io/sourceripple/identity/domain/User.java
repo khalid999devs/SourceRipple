@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
@@ -105,5 +106,9 @@ public class User {
 
     public Set<Role> getRoles() {
         return Collections.unmodifiableSet(roles);
+    }
+
+    public List<RoleName> roleNames() {
+        return roles.stream().map(Role::getName).sorted().toList();
     }
 }

@@ -14,6 +14,8 @@ import io.sourceripple.source.application.fetch.failure.SourceFetchFailedExcepti
 import io.sourceripple.source.domain.AddressPolicy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -103,7 +105,10 @@ class OkHttpWebFetcherTest {
         server.enqueue(new MockResponse.Builder().code(304).build());
 
         FetchResult result = fetcher(TestFetchLimits.defaults())
-                .fetch(new FetchRequest(server.url("/page").toString(), "\"v1\"", "Tue, 17 Nov 2026 10:00:00 GMT",
+                .fetch(FetchRequest.conditional(
+                        server.url("/page").toString(),
+                        "\"v1\"",
+                        "Tue, 17 Nov 2026 10:00:00 GMT",
                         FetchPurpose.SCHEDULED));
 
         RecordedRequest recorded = server.takeRequest();
@@ -137,6 +142,20 @@ class OkHttpWebFetcherTest {
                         "http://localhost:" + server.getPort() + "/", FetchPurpose.PREVIEW)))
                 .isInstanceOf(SourceFetchBlockedException.class);
         assertThat(server.getRequestCount()).isZero();
+    }
+
+    @Test
+    void aRequestTimeoutCutsASlowResponseShort() {
+        server.enqueue(new MockResponse.Builder()
+                .addHeader("Content-Type", "text/html")
+                .body("<p>late</p>")
+                .headersDelay(2, TimeUnit.SECONDS)
+                .build());
+
+        FetchRequest request = get("/slow").withTimeout(Duration.ofMillis(200));
+
+        assertThatThrownBy(() -> fetcher(TestFetchLimits.defaults()).fetch(request))
+                .isInstanceOfSatisfying(SourceFetchFailedException.class, ex -> assertThat(ex.retryable()).isTrue());
     }
 
     private FetchRequest get(String path) {

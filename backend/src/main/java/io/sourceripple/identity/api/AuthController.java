@@ -44,7 +44,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public MeResponse login(
-            @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
         AuthenticatedUser user =
                 sessionAuthenticator.login(request.email(), request.password(), httpRequest, httpResponse);
         return withOrganizations(authService.recordLogin(user.getId()));

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.sourceripple.shared.domain.GlobalFetchLimits;
 import io.sourceripple.shared.domain.TestFetchLimits;
 import io.sourceripple.source.application.RobotsPolicyService;
 import io.sourceripple.source.application.fetch.FetchPurpose;
@@ -20,12 +21,15 @@ import io.sourceripple.source.application.fetch.failure.SourceFetchBlockedExcept
 import io.sourceripple.source.application.fetch.failure.SourceFetchFailedException;
 import io.sourceripple.source.domain.AddressPolicy;
 import io.sourceripple.source.domain.UrlCanonicalizer;
+import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,9 +46,7 @@ class SafeFetchProxyTest {
 
     @BeforeEach
     void setUp() {
-        UrlCanonicalizer canonicalizer =
-                new UrlCanonicalizer(Set.of(80, 443, 8080, 8443), new AddressPolicy(false));
-        proxy = new SafeFetchProxy(delegate, canonicalizer, robots, TestFetchLimits.defaults());
+        proxy = proxy(TestFetchLimits.defaults());
     }
 
     @ParameterizedTest
@@ -82,7 +84,7 @@ class SafeFetchProxyTest {
         FetchResult result = proxy.fetch(FetchRequest.get("https://docs.example.com/payments", FetchPurpose.PREVIEW));
 
         assertThat(result.finalUrl()).isEqualTo("https://docs.example.com/v2/payments");
-        verify(robots, times(2)).check(any());
+        verify(robots, times(2)).check(any(), any());
     }
 
     @Test
@@ -97,7 +99,7 @@ class SafeFetchProxyTest {
 
     @Test
     void robotsDisallowStopsTheFetchBeforeTheDelegate() {
-        doThrow(new RobotsDisallowedException("https://docs.example.com/private")).when(robots).check(any());
+        doThrow(new RobotsDisallowedException("https://docs.example.com/private")).when(robots).check(any(), any());
 
         assertThatThrownBy(() -> proxy.fetch(
                         FetchRequest.get("https://docs.example.com/private", FetchPurpose.SCHEDULED)))
@@ -112,7 +114,62 @@ class SafeFetchProxyTest {
 
         proxy.fetch(FetchRequest.get("https://docs.example.com/robots.txt", FetchPurpose.ROBOTS));
 
-        verify(robots, never()).check(any());
+        verify(robots, never()).check(any(), any());
+    }
+
+    @Test
+    void everyHopAndRobotsCheckGetsWhatIsLeftOfOneDeadline() {
+        when(delegate.fetch(any())).thenAnswer(invocation -> slowly(redirect("/v2/payments"))).thenReturn(ok());
+
+        proxy.fetch(FetchRequest.get("https://docs.example.com/payments", FetchPurpose.PREVIEW));
+
+        ArgumentCaptor<FetchRequest> hops = ArgumentCaptor.forClass(FetchRequest.class);
+        verify(delegate, times(2)).fetch(hops.capture());
+        List<FetchRequest> requests = hops.getAllValues();
+        assertThat(requests.get(0).timeout()).isLessThanOrEqualTo(Duration.ofSeconds(15));
+        assertThat(requests.get(1).timeout()).isLessThan(requests.get(0).timeout().minusMillis(40));
+
+        ArgumentCaptor<Duration> robotsBudgets = ArgumentCaptor.forClass(Duration.class);
+        verify(robots, times(2)).check(any(), robotsBudgets.capture());
+        assertThat(robotsBudgets.getAllValues().get(1)).isLessThan(robotsBudgets.getAllValues().get(0));
+    }
+
+    @Test
+    void anExhaustedBudgetIsARetryableTimeout() {
+        SafeFetchProxy tight = proxy(TestFetchLimits.build(TestFetchLimits.builder()
+                .timeouts(Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofMillis(50))));
+        when(delegate.fetch(any())).thenAnswer(invocation -> slowly(redirect("/v2/payments")));
+
+        assertThatThrownBy(() -> tight.fetch(FetchRequest.get("https://docs.example.com/", FetchPurpose.PREVIEW)))
+                .isInstanceOfSatisfying(SourceFetchFailedException.class, ex -> {
+                    assertThat(ex.retryable()).isTrue();
+                    assertThat(ex.getMessage()).contains("in time");
+                });
+
+        verify(delegate, times(1)).fetch(any());
+    }
+
+    @Test
+    void aShorterRequestedTimeoutNarrowsTheBudget() {
+        when(delegate.fetch(any())).thenReturn(ok());
+
+        proxy.fetch(FetchRequest.get("https://docs.example.com/robots.txt", FetchPurpose.ROBOTS)
+                .withTimeout(Duration.ofSeconds(2)));
+
+        ArgumentCaptor<FetchRequest> hop = ArgumentCaptor.forClass(FetchRequest.class);
+        verify(delegate).fetch(hop.capture());
+        assertThat(hop.getValue().timeout()).isLessThanOrEqualTo(Duration.ofSeconds(2));
+    }
+
+    private SafeFetchProxy proxy(GlobalFetchLimits limits) {
+        UrlCanonicalizer canonicalizer =
+                new UrlCanonicalizer(Set.of(80, 443, 8080, 8443), new AddressPolicy(false));
+        return new SafeFetchProxy(delegate, canonicalizer, robots, limits);
+    }
+
+    private static FetchResult slowly(FetchResult result) throws InterruptedException {
+        Thread.sleep(60);
+        return result;
     }
 
     private static FetchResult redirect(String location) {

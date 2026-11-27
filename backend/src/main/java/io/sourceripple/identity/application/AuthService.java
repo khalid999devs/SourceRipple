@@ -42,12 +42,13 @@ public class AuthService {
         if (users.existsByEmailIgnoreCase(email)) {
             throw emailTaken();
         }
+
         User user = new User(
                 email, passwordEncoder.encode(request.password()), request.displayName().trim(), clock.instant());
         user.addRole(role(request.accountType()));
         try {
             return UserResponse.from(users.saveAndFlush(user));
-        } catch (DataIntegrityViolationException raceWithAnotherRegistration) {
+        } catch (DataIntegrityViolationException e) {
             throw emailTaken();
         }
     }
