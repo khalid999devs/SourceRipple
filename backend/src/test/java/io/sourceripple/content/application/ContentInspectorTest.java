@@ -17,7 +17,7 @@ class ContentInspectorTest {
     void flagsAScriptMountedShellWithAlmostNoText() {
         byte[] shell = Fixtures.read("js-shell.html");
 
-        assertThat(inspector.warnings(adapt(shell), shell, null, 1024 * 1024))
+        assertThat(inspector.warnings(adapt(shell), shell.length, 1024 * 1024))
                 .containsExactly(ContentWarning.LIKELY_JS_RENDERED);
     }
 
@@ -25,8 +25,8 @@ class ContentInspectorTest {
     void aServerRenderedPageHasNoWarningsUntilItIsLarge() {
         byte[] page = Fixtures.read("payments-v1.html");
 
-        assertThat(inspector.warnings(adapt(page), page, null, 1024 * 1024)).isEmpty();
-        assertThat(inspector.warnings(adapt(page), page, null, 100)).containsExactly(ContentWarning.LARGE_PAGE);
+        assertThat(inspector.warnings(adapt(page), page.length, 1024 * 1024)).isEmpty();
+        assertThat(inspector.warnings(adapt(page), page.length, 100)).containsExactly(ContentWarning.LARGE_PAGE);
     }
 
     private NormalizedDocument adapt(byte[] body) {

@@ -40,6 +40,17 @@ class HtmlPageAdapterTest {
     }
 
     @Test
+    void chromeInsideTheMainElementIsRemovedToo() {
+        NormalizedDocument original = adapt(Fixtures.read("payments-v1.html"));
+
+        NormalizedDocument chromeInside = adapt(Fixtures.read("chrome-inside-main.html"));
+
+        assertThat(chromeInside.sections()).isEqualTo(original.sections());
+        assertThat(chromeInside.sections())
+                .allSatisfy(section -> assertThat(section.title() + section.text()).doesNotContain("CHROME"));
+    }
+
+    @Test
     void onlyTheParametersSectionChangesBetweenV1AndV2() {
         Map<String, String> v1 = hashes(adapt(Fixtures.read("payments-v1.html")));
         Map<String, String> v2 = hashes(adapt(Fixtures.read("payments-v2.html")));
@@ -80,6 +91,29 @@ class HtmlPageAdapterTest {
         String html = "<html><body><main><h2>Fees</h2><p>Flat​   fee \n of 2%</p></main></body></html>";
 
         assertThat(section(adapt(html.getBytes(StandardCharsets.UTF_8)), "fees").text()).isEqualTo("Flat fee of 2%");
+    }
+
+    @Test
+    void inlineTextKeepsItsOrderAndLooseTextIsKept() {
+        String html = """
+                <html><body><main>
+                Loose intro text.
+                <h2>Usage</h2>
+                <div>Use the <code>amount</code> field.</div>
+                Then <em>send</em> the request.
+                </main></body></html>
+                """;
+
+        NormalizedDocument document = adapt(html.getBytes(StandardCharsets.UTF_8));
+
+        assertThat(section(document, "_intro").text()).isEqualTo("Loose intro text.");
+        assertThat(section(document, "usage").text()).isEqualTo("Use the amount field.\nThen send the request.");
+    }
+
+    @Test
+    void flagsAnEmptyScriptMountRoot() {
+        assertThat(adapt(Fixtures.read("js-shell.html")).scriptMounted()).isTrue();
+        assertThat(adapt(Fixtures.read("payments-v1.html")).scriptMounted()).isFalse();
     }
 
     private NormalizedDocument adapt(byte[] body) {

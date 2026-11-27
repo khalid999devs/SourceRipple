@@ -6,9 +6,6 @@ import io.sourceripple.content.domain.SourceAdapter;
 import io.sourceripple.content.domain.SourceKind;
 import io.sourceripple.content.domain.TextNormalizer;
 import io.sourceripple.content.domain.rules.ExtractionRuleSet;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -18,9 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Evaluator;
+import org.jsoup.select.NodeFilter;
+import org.jsoup.select.NodeTraversor;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,8 +29,8 @@ public class HtmlPageAdapter implements SourceAdapter {
 
     static final String INTRO_KEY = "_intro";
 
-    private static final Set<String> TEXT_BLOCKS =
-            Set.of("p", "li", "pre", "blockquote", "dt", "dd", "figcaption", "h5", "h6", "table", "caption");
+    private static final Set<String> TEXT_BLOCKS = Set.of("p", "li", "pre", "blockquote", "dt", "dd", "figcaption");
+    private static final String SCRIPT_ROOTS = "#root, #app, #__next, #__nuxt, #svelte, [data-reactroot], app-root";
 
     @Override
     public SourceKind kind() {
@@ -38,11 +39,14 @@ public class HtmlPageAdapter implements SourceAdapter {
 
     @Override
     public NormalizedDocument adapt(byte[] body, Charset declaredCharset, String baseUrl, ExtractionRuleSet rules) {
-        Document document = parse(body, declaredCharset, baseUrl);
+        Document document = JsoupDocuments.html(body, declaredCharset, baseUrl);
         String title = TextNormalizer.normalize(document.title());
-        clean(document, rules);
+        boolean scriptMounted = isScriptMounted(document);
+
+        rules.removedElements().ifPresent(removed -> document.select(removed).remove());
         Element main = mainContent(document, rules);
-        List<NormalizedSection> sections = new SectionBuilder(rules.maxHeadingLevel()).build(main);
+        List<NormalizedSection> sections = new SectionBuilder(main, rules.maxHeadingLevel()).build();
+
         if (title.isEmpty()) {
             title = sections.stream()
                     .map(NormalizedSection::title)
@@ -50,27 +54,16 @@ public class HtmlPageAdapter implements SourceAdapter {
                     .findFirst()
                     .orElse("");
         }
-        return NormalizedDocument.of(SourceKind.HTML, title, sections);
+        return NormalizedDocument.of(SourceKind.HTML, title, sections, scriptMounted);
     }
 
-    private static Document parse(byte[] body, Charset declaredCharset, String baseUrl) {
-        try {
-            return Jsoup.parse(
-                    new ByteArrayInputStream(body),
-                    declaredCharset == null ? null : declaredCharset.name(),
-                    baseUrl == null ? "" : baseUrl);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static void clean(Document document, ExtractionRuleSet rules) {
-        rules.removedTags().forEach(tag -> document.select(tag).remove());
-        rules.removedRoles().forEach(role -> document.select("[role=" + role + "]").remove());
+    private static boolean isScriptMounted(Document document) {
+        boolean hasScripts = !document.select("script").isEmpty();
+        return hasScripts && document.select(SCRIPT_ROOTS).stream().anyMatch(root -> root.text().isBlank());
     }
 
     private static Element mainContent(Document document, ExtractionRuleSet rules) {
-        for (String selector : rules.mainContentSelectors()) {
+        for (Evaluator selector : rules.mainContent()) {
             Element candidate = document.selectFirst(selector);
             if (candidate != null) {
                 return candidate;
@@ -79,42 +72,73 @@ public class HtmlPageAdapter implements SourceAdapter {
         return document.body();
     }
 
-    private static final class SectionBuilder {
+    private static class SectionBuilder implements NodeFilter {
 
+        private final Element main;
         private final int maxHeadingLevel;
         private final List<NormalizedSection> sections = new ArrayList<>();
         private final Map<String, Integer> usedKeys = new HashMap<>();
         private final Deque<HeadingPart> path = new ArrayDeque<>();
+        private final List<String> currentText = new ArrayList<>();
+        private final StringBuilder inlineText = new StringBuilder();
+
         private String currentKey = INTRO_KEY;
         private String currentTitle = "";
-        private final List<String> currentText = new ArrayList<>();
 
-        SectionBuilder(int maxHeadingLevel) {
+        SectionBuilder(Element main, int maxHeadingLevel) {
+            this.main = main;
             this.maxHeadingLevel = maxHeadingLevel;
         }
 
-        List<NormalizedSection> build(Element main) {
-            for (Element element : main.getAllElements()) {
-                if (element == main) {
-                    continue;
-                }
-                int level = headingLevel(element);
-                if (level > 0) {
-                    startSection(element, level);
-                } else if (element.tagName().equals("table") && !insideTextBlock(element, main)) {
-                    tableRows(element).forEach(this::addText);
-                } else if (isTextBlock(element) && !insideTextBlock(element, main)) {
-                    addText(element.text());
-                } else if (!insideTextBlock(element, main) && !element.ownText().isBlank()) {
-                    addText(element.ownText());
-                }
-            }
+        List<NormalizedSection> build() {
+            NodeTraversor.filter(this, main);
             finishSection();
             return sections;
         }
 
+        @Override
+        public FilterResult head(Node node, int depth) {
+            if (node instanceof TextNode text) {
+                inlineText.append(text.getWholeText());
+                return FilterResult.CONTINUE;
+            }
+            if (!(node instanceof Element element) || element == main) {
+                return FilterResult.CONTINUE;
+            }
+
+            int level = headingLevel(element);
+            if (level > 0) {
+                startSection(element, level);
+                return FilterResult.SKIP_ENTIRELY;
+            }
+            if (element.nameIs("table")) {
+                flushInline();
+                tableRows(element).forEach(this::addText);
+                return FilterResult.SKIP_ENTIRELY;
+            }
+            if (TEXT_BLOCKS.contains(element.normalName())) {
+                flushInline();
+                addText(element.text());
+                return FilterResult.SKIP_ENTIRELY;
+            }
+            if (element.nameIs("br")) {
+                inlineText.append(' ');
+            } else if (element.isBlock()) {
+                flushInline();
+            }
+            return FilterResult.CONTINUE;
+        }
+
+        @Override
+        public FilterResult tail(Node node, int depth) {
+            if (node instanceof Element element && element.isBlock()) {
+                flushInline();
+            }
+            return FilterResult.CONTINUE;
+        }
+
         private int headingLevel(Element element) {
-            String tag = element.tagName();
+            String tag = element.normalName();
             if (tag.length() == 2 && tag.charAt(0) == 'h' && Character.isDigit(tag.charAt(1))) {
                 int level = tag.charAt(1) - '0';
                 return level <= maxHeadingLevel ? level : 0;
@@ -122,27 +146,16 @@ public class HtmlPageAdapter implements SourceAdapter {
             return 0;
         }
 
-        private boolean isTextBlock(Element element) {
-            return TEXT_BLOCKS.contains(element.tagName()) && headingLevel(element) == 0;
-        }
-
-        private boolean insideTextBlock(Element element, Element main) {
-            for (Element parent = element.parent(); parent != null && parent != main; parent = parent.parent()) {
-                if (isTextBlock(parent) || headingLevel(parent) > 0) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         private void startSection(Element heading, int level) {
             finishSection();
+
             String title = TextNormalizer.normalize(heading.text());
             while (!path.isEmpty() && path.peekLast().level() >= level) {
                 path.removeLast();
             }
             String slug = TextNormalizer.slugify(title);
             path.addLast(new HeadingPart(level, slug.isEmpty() ? "section" : slug));
+
             String anchor = anchorOf(heading);
             String base = anchor != null
                     ? anchor
@@ -160,7 +173,7 @@ public class HtmlPageAdapter implements SourceAdapter {
                 return inner.hasAttr("id") ? inner.id().trim() : inner.attr("name").trim();
             }
             Element previous = heading.previousElementSibling();
-            if (previous != null && previous.tagName().equals("a") && previous.text().isBlank()) {
+            if (previous != null && previous.nameIs("a") && previous.text().isBlank()) {
                 String name = previous.hasAttr("id") ? previous.id() : previous.attr("name");
                 return name.isBlank() ? null : name.trim();
             }
@@ -172,6 +185,11 @@ public class HtmlPageAdapter implements SourceAdapter {
             return seen == 1 ? base : base + "-" + seen;
         }
 
+        private void flushInline() {
+            addText(inlineText.toString());
+            inlineText.setLength(0);
+        }
+
         private void addText(String raw) {
             String text = TextNormalizer.normalize(raw);
             if (!text.isEmpty()) {
@@ -180,6 +198,7 @@ public class HtmlPageAdapter implements SourceAdapter {
         }
 
         private void finishSection() {
+            flushInline();
             String text = String.join("\n", currentText);
             boolean emptyIntro = currentKey.equals(INTRO_KEY) && text.isEmpty();
             if (!emptyIntro) {

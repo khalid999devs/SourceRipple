@@ -78,7 +78,7 @@ public class WatchPreviewService {
         NormalizedDocument document =
                 adapters.adapt(result.mediaType(), result.body(), result.declaredCharset(), result.finalUrl());
         List<String> warnings = inspector
-                .warnings(document, result.body(), result.declaredCharset(), limits.largePageBytes())
+                .warnings(document, result.body().length, limits.largePageBytes())
                 .stream()
                 .map(ContentWarning::name)
                 .toList();

@@ -54,8 +54,23 @@ class RssFeedAdapterTest {
                 .containsExactly("urn:status:1", "https://status.example/2");
     }
 
+    @Test
+    void anItemWithoutGuidLinkOrTitleIsKeyedByPosition() {
+        String rss = """
+                <rss version="2.0"><channel><title>Notes</title>
+                  <item><description>First.</description></item>
+                  <item><description>Second.</description></item>
+                </channel></rss>
+                """;
+
+        NormalizedDocument feed = adapt(rss.getBytes(StandardCharsets.UTF_8));
+
+        assertThat(feed.sections()).extracting(NormalizedSection::key).containsExactly("item-1", "item-2");
+    }
+
     private NormalizedDocument adapt(byte[] body) {
-        NormalizedDocument document = adapter.adapt(body, null, "https://vendor.example/", rules.defaultFor(SourceKind.RSS));
+        NormalizedDocument document =
+                adapter.adapt(body, null, "https://vendor.example/", rules.defaultFor(SourceKind.RSS));
         assertThat(document.kind()).isEqualTo(SourceKind.RSS);
         return document;
     }
