@@ -42,6 +42,30 @@ class RateLimiterTest {
         assertThat(limiter.tryAcquire("b", 1, WINDOW)).isEmpty();
     }
 
+    @Test
+    void cleanupForAShortWindowKeepsHitsOfALongerWindow() {
+        limiter.tryAcquire("login", 1, WINDOW);
+        clock.advance(Duration.ofMinutes(2));
+
+        for (int call = 2; call <= RateLimiter.CLEANUP_EVERY; call++) {
+            limiter.tryAcquire("preview:" + call, 10, Duration.ofMinutes(1));
+        }
+
+        assertThat(limiter.tryAcquire("login", 1, WINDOW)).contains(Duration.ofMinutes(13));
+    }
+
+    @Test
+    void cleanupDropsKeysWhoseOwnWindowHasPassed() {
+        limiter.tryAcquire("old", 1, Duration.ofMinutes(1));
+        clock.advance(Duration.ofMinutes(2));
+
+        for (int call = 2; call <= RateLimiter.CLEANUP_EVERY; call++) {
+            limiter.tryAcquire("same", Integer.MAX_VALUE, WINDOW);
+        }
+
+        assertThat(limiter.trackedKeys()).isEqualTo(1);
+    }
+
     private static final class MutableClock extends Clock {
 
         private Instant now;

@@ -6,6 +6,7 @@ sourceripple:
     min-interval-hours: 1
   fetch:
     allow-private-targets: true
+    allowed-ports: [80, 443, 8080, 8443, 18089]
   demo:
     enabled: false
 

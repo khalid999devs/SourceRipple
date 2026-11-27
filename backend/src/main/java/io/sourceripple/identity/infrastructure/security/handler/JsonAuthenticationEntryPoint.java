@@ -13,7 +13,8 @@ public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final HandlerExceptionResolver exceptionResolver;
 
-    public JsonAuthenticationEntryPoint(@Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+    public JsonAuthenticationEntryPoint(
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
         this.exceptionResolver = exceptionResolver;
     }
 
