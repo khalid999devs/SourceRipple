@@ -41,7 +41,7 @@ User and password never go inside the JDBC URL. If Neon's string includes extra 
 
 Render pitfalls (§17.3): spin-down after 15 min idle and ~1 min cold start; restarts lose memory (sessions are in Postgres); ephemeral disk; 512 MB RAM; 500 build minutes (only `main` deploys, image skips tests); **no 24/7 keep-alive pinger** (burns free instance hours). Track the Render Postgres expiry date (§17.3).
 
-## 3. Cloud Run + Neon (Imrul) — §17.4
+## 3. Cloud Run + Neon (Khalid) — §17.4
 One-time setup (replace `PROJECT`, `OWNER/REPO`):
 ```bash
 gcloud config set project PROJECT
@@ -88,7 +88,7 @@ gcloud scheduler jobs create http sr-tick --location=asia-southeast1 --schedule=
 ```
 Cloud Run pitfalls (§17.4): never rely on `@Scheduled`/`@Async`; cold start is a few seconds even with CPU boost, so warm before the demo; keep images < 0.5 GB; no billing account → raise Q3 immediately and pick a verified fallback host.
 
-## 4. README deployment section (Imrul, §20.1 item 10)
+## 4. README deployment section (Khalid, §20.1 item 10)
 Both platforms step by step (sections 1–3 condensed), the execution-model difference (Render: sleeping instance with internal loop + 3-hourly GitHub cron tick; Cloud Run: request-only CPU with hourly Cloud Scheduler tick), and the full environment-variable reference. Worth 5 bonus marks (§17.4).
 
 ## 5. Verification (after every release)

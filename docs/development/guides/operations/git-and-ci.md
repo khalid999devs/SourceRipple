@@ -64,6 +64,20 @@ Force-pushing is allowed **only** to your own work branch, only with `--force-wi
 4. **Squash-merge**; the squash title is the PR title. The branch is deleted automatically.
 5. **Release:** PR `develop → main`, title `chore(release): <summary>`, merge commit, approved by a member other than the author. From Phase 11 it deploys.
 
+## Stacked pull requests
+When a slice needs the previous one before it is merged, branch from that slice and open the PR against its branch. CI runs on every PR, whatever the base.
+
+1. Merge the stack bottom-up. Only the bottom PR targets `develop`.
+2. After the bottom PR is squash-merged, GitHub deletes its branch and retargets the next PR to `develop`. Rebase that branch onto the squashed result:
+   ```bash
+   git fetch origin
+   git rebase --onto origin/develop <old-parent-branch-tip-sha> feature/p<N>-<next-slug>
+   git push --force-with-lease
+   ```
+3. Wait for CI and the approval, merge, and repeat for the next PR.
+
+Keep stacks short (≤ 4 PRs). Reviewers review each PR's own diff only.
+
 ## Commit messages
 Format: `type(scope): subject`
 - **type:** `feat` `fix` `refactor` `test` `docs` `chore` `ci` `build` `perf` `style`.
@@ -111,7 +125,7 @@ Reviewers check, in order:
 - **Accidental local commit on `develop`/`main`:** `git branch feature/p<N>-<slug>` then `git reset --hard origin/develop` (or `origin/main`); the hook blocks the push anyway.
 
 ## CI jobs
-`.github/workflows/ci.yml` triggers on `pull_request` into `develop`/`main` and `push` to `develop`/`main`. Third-party actions pinned to a major version (§15.3).
+`.github/workflows/ci.yml` triggers on every `pull_request` (including stacked PRs) and on `push` to `develop`/`main`. Dependabot ignores major updates and Spring Boot minor updates, because the stack versions are pinned in Phase 1. Third-party actions pinned to a major version (§15.3).
 
 | Job | Since | When | Steps |
 |---|---|---|---|
