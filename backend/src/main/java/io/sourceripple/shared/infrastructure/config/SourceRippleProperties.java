@@ -13,9 +13,11 @@ public record SourceRippleProperties(
         Admin admin,
         Metrics metrics,
         Scheduler scheduler,
+        Workspace workspace,
         Watches watches,
         Fetch fetch,
         Webhooks webhooks,
+        RateLimit rateLimit,
         Demo demo) {
 
     public record Admin(String email, String password) {}
@@ -31,13 +33,14 @@ public record SourceRippleProperties(
     public record Scheduler(
             SchedulerMode mode, Duration loopInterval, Duration tickBudget, int claimBatch, Duration lease) {}
 
+    public record Workspace(int maxOrganizationsPerUser) {}
+
     public record Watches(
             int defaultIntervalHours,
             int minIntervalHours,
             int versionsRetained,
             int maxPerProject,
             int maxPerOrganization,
-            int maxOrganizationsPerUser,
             int maxActiveSources) {}
 
     public record Fetch(
@@ -50,9 +53,15 @@ public record SourceRippleProperties(
             int maxRedirects,
             int concurrency,
             Duration perHostGap,
-            List<Integer> allowedPorts) {}
+            List<Integer> allowedPorts,
+            List<String> allowedContentTypes,
+            DataSize largePageBytes) {}
 
     public record Webhooks(Duration timeout, int maxAttempts) {}
+
+    public record RateLimit(Limit login, Limit preview) {}
+
+    public record Limit(int requests, Duration window) {}
 
     public record Demo(boolean enabled, String webhookSecret, String userPassword) {}
 }
