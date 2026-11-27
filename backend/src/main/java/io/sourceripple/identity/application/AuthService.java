@@ -9,8 +9,8 @@ import io.sourceripple.identity.domain.RoleRepository;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.api.ErrorCode;
-import io.sourceripple.shared.api.error.BadRequestException;
-import io.sourceripple.shared.api.error.ConflictException;
+import io.sourceripple.shared.api.error.status.BadRequestException;
+import io.sourceripple.shared.api.error.status.ConflictException;
 import java.time.Clock;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -42,12 +42,13 @@ public class AuthService {
         if (users.existsByEmailIgnoreCase(email)) {
             throw emailTaken();
         }
+
         User user = new User(
                 email, passwordEncoder.encode(request.password()), request.displayName().trim(), clock.instant());
         user.addRole(role(request.accountType()));
         try {
             return UserResponse.from(users.saveAndFlush(user));
-        } catch (DataIntegrityViolationException raceWithAnotherRegistration) {
+        } catch (DataIntegrityViolationException e) {
             throw emailTaken();
         }
     }

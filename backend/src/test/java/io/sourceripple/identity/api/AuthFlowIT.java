@@ -37,7 +37,7 @@ class AuthFlowIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.user.lastLoginAt").isNotEmpty())
                 .andExpect(jsonPath("$.roles[0]").value("MAINTAINER"));
 
-        mvc.perform(post("/api/v1/auth/logout").cookie(session)).andExpect(status().isNoContent());
+        mvc.perform(post("/api/v1/auth/logout").with(xsrf()).cookie(session)).andExpect(status().isNoContent());
 
         mvc.perform(get("/api/v1/auth/me").cookie(session))
                 .andExpect(status().isUnauthorized())
@@ -65,6 +65,7 @@ class AuthFlowIT extends AbstractIntegrationTest {
         Cookie first = sessionCookie(login(email, PASSWORD));
 
         Cookie second = sessionCookie(mvc.perform(post("/api/v1/auth/login")
+                        .with(xsrf())
                         .cookie(first)
                         .contentType("application/json")
                         .content("""
