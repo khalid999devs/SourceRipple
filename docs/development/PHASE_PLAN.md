@@ -6,9 +6,9 @@ Derived from PRD §21 (team, phases, calendar, collaboration, scope cuts) and §
 
 | Member | GitHub | Phases led | Role in other phases |
 |---|---|---|---|
-| **Khalid** (Lead, repository owner) | `khalid999devs` | 1, 8–11 | Reviews Ajoy's PRs (alternating with Imrul); demo kit in Phase 5; pairs on I9 in Phase 6 |
+| **Khalid** (Lead, repository owner) | `khalid999devs` | 1, 8–11 (10 and 11 alone) | Reviews Ajoy's PRs (alternating with Imrul); demo kit in Phase 5; pairs on I9 in Phase 6 |
 | **Ajoy** | `ajoycodes` | 2–7 | Reviews in 8–11; core bug fixes; pattern class diagrams (Phase 10); production smoke tests (Phase 11) |
-| **Imrul** | `kayes2207054` | 8–10 (with Lead) | Frontend foundation in Phase 3; reviews UI conventions in Phase 7; Cloud Run and docs in Phase 11 |
+| **Imrul** | `kayes2207054` | 8–9 (with Lead) | Frontend foundation in Phase 3; reviews UI conventions in Phase 7; reviews in 10–11 |
 
 ## Phases at a glance
 
@@ -23,8 +23,8 @@ Derived from PRD §21 (team, phases, calendar, collaboration, scope cuts) and §
 | 7 | [Baseline product screens](phases/core/phase-07-baseline-screens.md) | Ajoy | Imrul reviews UI conventions | 3 (shells), 6 | §8.5 S3–S8, S9 (table), S10, S14 | The whole core loop is usable in the browser end to end |
 | 8 | [Integrations and admin](phases/additions/phase-08-integrations-admin.md) | Imrul + Lead | Ajoy reviews | 6 | FR-NTF, FR-WHK (incl. extending the Phase 6 transaction), FR-KEY, FR-MCP, FR-ADM-2..4, S11–S13 | Signed webhook DELIVERED to the demo receiver; admin console works |
 | 9 | [Observability and marketing site](phases/additions/phase-09-observability-marketing.md) | Lead + Imrul | Ajoy reviews | 6 (start gate), 3 | §18, FR-WEB, §8.6 | Grafana dashboard live through Compose; landing and pricing reach Lighthouse ≥ 90 locally |
-| 10 | [Polish and hardening](phases/additions/phase-10-polish-hardening.md) | Imrul + Lead | **Ajoy:** core bug fixes, pattern diagrams | 8, 9 | §8.4–§8.5, §11.5, §14, §20 | All P0 and P1 items done except deployment; CI green |
-| 11 | [Deployments and release](phases/release/phase-11-deployments.md) | Lead | **Imrul:** Cloud Run + docs; **Ajoy:** prod smoke tests | 10 | §15.3 deploy jobs, §17, §20.1 item 10, §20.2 | Both public URLs serve the release SHA; golden flow passes on Render; demo rehearsed |
+| 10 | [Polish and hardening](phases/additions/phase-10-polish-hardening.md) | Lead | **Ajoy:** core bug fixes, pattern diagrams | 8, 9 | §8.4–§8.5, §11.5, §14, §20 | All P0 and P1 items done except deployment; CI green |
+| 11 | [Deployments and release](phases/release/phase-11-deployments.md) | Lead | **Ajoy:** prod smoke tests; Imrul reviews | 10 | §15.3 deploy jobs, §17, §20.1 item 10, §20.2 | Both public URLs serve the release SHA; golden flow passes on Render; demo rehearsed |
 
 ## Dependency graph
 
@@ -43,7 +43,7 @@ flowchart LR
   P6 --> P8[8 Integrations & admin<br/>Imrul + Lead]
   P6 --> P9[9 Observability & marketing<br/>Lead + Imrul]
   P3F --> P9
-  P7 --> P10[10 Polish & hardening]
+  P7 --> P10[10 Polish & hardening<br/>Lead]
   P8 --> P10
   P9 --> P10
   P10 --> P11[11 Deployments & release<br/>Lead]
@@ -64,7 +64,7 @@ The full build fits in **2 weeks**. Exact dates follow the submission date (Q4).
 
 - Nobody approves their own work. Every PR needs ≥ 1 approval from another member.
 - Phases 2–7: Ajoy's PRs **alternate** between Lead and Imrul. Odd-numbered PRs in a phase go to Lead, even-numbered to Imrul. UI PRs in Phase 7 always include Imrul.
-- Phases 8–11: Lead and Imrul review each other; Ajoy reviews at least one PR from each of them per phase.
+- Phases 8–9: Lead and Imrul review each other; Phases 10–11: Imrul and Ajoy review the Lead; Ajoy reviews at least one PR from each of them per phase.
 - Parallel tasks: Imrul's Phase 3 PRs are reviewed by Lead; Lead's Phase 5 demo-kit PRs are reviewed by Ajoy.
 
 ## Collaboration minimums (PRD §21.4)
