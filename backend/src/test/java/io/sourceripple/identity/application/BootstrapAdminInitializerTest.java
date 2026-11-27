@@ -1,6 +1,7 @@
 package io.sourceripple.identity.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -13,12 +14,15 @@ import io.sourceripple.identity.domain.RoleRepository;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.infrastructure.config.SourceRippleProperties;
+import io.sourceripple.support.TestProperties;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -78,9 +82,18 @@ class BootstrapAdminInitializerTest {
         verify(users, never()).save(any());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"short-pw", "ééééééééééééééééééééééééééééééééééééé"})
+    void refusesAPasswordBcryptCannotUse(String password) {
+        assertThatThrownBy(() -> initializer("admin@example.com", password).run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("SOURCERIPPLE_ADMIN_PASSWORD");
+
+        verify(users, never()).save(any());
+    }
+
     private BootstrapAdminInitializer initializer(String email, String password) {
-        SourceRippleProperties properties = new SourceRippleProperties(
-                null, null, null, new SourceRippleProperties.Admin(email, password), null, null, null, null, null, null);
+        SourceRippleProperties properties = TestProperties.withAdmin(new SourceRippleProperties.Admin(email, password));
         return new BootstrapAdminInitializer(users, roles, passwordEncoder, properties, CLOCK);
     }
 }

@@ -17,8 +17,8 @@ import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.api.ErrorCode;
 import io.sourceripple.shared.api.error.ApiException;
-import io.sourceripple.shared.api.error.BadRequestException;
-import io.sourceripple.shared.api.error.ConflictException;
+import io.sourceripple.shared.api.error.status.BadRequestException;
+import io.sourceripple.shared.api.error.status.ConflictException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -65,7 +65,6 @@ class AuthServiceTest {
         ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
         verify(users).saveAndFlush(saved.capture());
         assertThat(saved.getValue().getPasswordHash()).isEqualTo("$2a$12$encoded");
-        assertThat(saved.getValue().getPasswordHash()).isNotEqualTo("correct-horse-battery");
         assertThat(saved.getValue().getEmail()).isEqualTo("ada@example.com");
         assertThat(saved.getValue().getCreatedAt()).isEqualTo(NOW);
         assertThat(saved.getValue().getRoles()).containsExactly(reviewer);

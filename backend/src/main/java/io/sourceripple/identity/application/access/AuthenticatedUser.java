@@ -1,0 +1,77 @@
+package io.sourceripple.identity.application.access;
+
+import io.sourceripple.identity.domain.RoleName;
+import java.io.Serial;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.security.core.CredentialsContainer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+public class AuthenticatedUser implements UserDetails, CredentialsContainer {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private final UUID id;
+    private final String email;
+    private String passwordHash;
+    private final boolean enabled;
+    private final List<GrantedAuthority> authorities;
+
+    public AuthenticatedUser(
+            UUID id, String email, String passwordHash, boolean enabled, List<GrantedAuthority> authorities) {
+        this.id = id;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.enabled = enabled;
+        this.authorities = List.copyOf(authorities);
+    }
+
+    public static List<GrantedAuthority> authoritiesOf(Collection<RoleName> roles) {
+        return roles.stream()
+                .sorted()
+                .<GrantedAuthority>map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .toList();
+    }
+
+    public AuthenticatedUser withAuthorities(List<GrantedAuthority> newAuthorities) {
+        return new AuthenticatedUser(id, email, null, enabled, newAuthorities);
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return passwordHash;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
+    }
+
+    public boolean hasRole(RoleName role) {
+        String authority = "ROLE_" + role.name();
+        return authorities.stream().anyMatch(granted -> authority.equals(granted.getAuthority()));
+    }
+
+    @Override
+    public void eraseCredentials() {
+        passwordHash = null;
+    }
+}
