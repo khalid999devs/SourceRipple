@@ -9,17 +9,17 @@ class GlobalFetchLimitsTest {
 
     @Test
     void initializeReturnsTheSameInstanceForTheSameLimits() {
-        GlobalFetchLimits first = GlobalFetchLimits.initialize(GlobalFetchLimits.builder());
-        GlobalFetchLimits second = GlobalFetchLimits.initialize(GlobalFetchLimits.builder());
+        GlobalFetchLimits first = GlobalFetchLimits.initialize(TestFetchLimits.builder());
+        GlobalFetchLimits second = GlobalFetchLimits.initialize(TestFetchLimits.builder());
 
         assertThat(second).isSameAs(first).isSameAs(GlobalFetchLimits.getInstance());
     }
 
     @Test
     void initializeRefusesDifferentLimitsOnceBuilt() {
-        GlobalFetchLimits.initialize(GlobalFetchLimits.builder());
+        GlobalFetchLimits.initialize(TestFetchLimits.builder());
 
-        assertThatThrownBy(() -> GlobalFetchLimits.initialize(GlobalFetchLimits.builder().maxRedirects(9)))
+        assertThatThrownBy(() -> GlobalFetchLimits.initialize(TestFetchLimits.builder().maxRedirects(9)))
                 .isInstanceOf(IllegalStateException.class);
     }
 

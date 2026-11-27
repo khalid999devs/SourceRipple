@@ -81,6 +81,28 @@ class AdminAccessIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void anAdminChangingTheirOwnRolesStaysSignedInWithTheNewRoles() throws Exception {
+        Cookie admin = createAdminAndLogin();
+        String adminId = idOf(mvc.perform(get("/api/v1/auth/me").cookie(admin))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(), "$.user.id");
+        postJson("/api/v1/organizations", admin, "{\"name\": \"Before\"}").andExpect(status().isForbidden());
+
+        mvc.perform(put("/api/v1/admin/users/" + adminId + "/roles")
+                        .with(xsrf())
+                        .cookie(admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\": [\"ADMIN\", \"MAINTAINER\"]}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/auth/me").cookie(admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roles", hasItem("MAINTAINER")));
+        postJson("/api/v1/organizations", admin, "{\"name\": \"After\"}").andExpect(status().isCreated());
+    }
+
+    @Test
     void unknownUserIsNotFound() throws Exception {
         mvc.perform(patch("/api/v1/admin/users/00000000-0000-0000-0000-000000000001")
                         .with(xsrf())

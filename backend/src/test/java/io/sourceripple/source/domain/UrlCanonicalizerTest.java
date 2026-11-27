@@ -43,6 +43,9 @@ class UrlCanonicalizerTest {
         "http://169.254.169.254/latest/meta-data",
         "http://100.64.0.1/",
         "http://2130706433/",
+        "http://999.1.1.1/",
+        "http://1.2.3.4.5/",
+        "http://010.0.0.1/",
         "http://[::1]/",
         "http://[fd00::1]/",
         "http://[::ffff:10.0.0.1]/",
@@ -63,6 +66,25 @@ class UrlCanonicalizerTest {
         assertThat(url.host()).isEqualTo("127.0.0.1");
         assertThat(url.port()).isEqualTo(8080);
         assertThat(url.origin()).isEqualTo("http://127.0.0.1:8080");
+    }
+
+    @Test
+    void thePortRuleHoldsEvenWhenPrivateTargetsAreAllowed() {
+        UrlCanonicalizer permissive = new UrlCanonicalizer(Set.of(80, 443, 8080, 8443), new AddressPolicy(true));
+
+        assertThatThrownBy(() -> permissive.canonicalize("http://localhost:54321/feed.xml"))
+                .isInstanceOf(SourceFetchBlockedException.class)
+                .hasMessageContaining("54321");
+    }
+
+    @Test
+    void ipv6OriginsKeepTheirBrackets() {
+        UrlCanonicalizer permissive = new UrlCanonicalizer(Set.of(80, 443, 8080, 8443), new AddressPolicy(true));
+
+        CanonicalUrl url = permissive.canonicalize("http://[::1]:8080/x");
+
+        assertThat(url.value()).isEqualTo("http://[::1]:8080/x");
+        assertThat(url.origin()).isEqualTo("http://[::1]:8080");
     }
 
     @Test
