@@ -22,10 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin")
 public class AdminController {
 
-    private final AdminUserService users;
+    private final AdminUserService adminUsers;
 
-    public AdminController(AdminUserService users) {
-        this.users = users;
+    public AdminController(AdminUserService adminUsers) {
+        this.adminUsers = adminUsers;
     }
 
     @GetMapping("/users")
@@ -33,12 +33,12 @@ public class AdminController {
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return users.list(q, page, size);
+        return adminUsers.list(q, page, size);
     }
 
     @PatchMapping("/users/{userId}")
     public AdminUserResponse updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserRequest request) {
-        return users.update(userId, request);
+        return adminUsers.update(userId, request);
     }
 
     @PutMapping("/users/{userId}/roles")
@@ -46,6 +46,6 @@ public class AdminController {
             @PathVariable UUID userId,
             @Valid @RequestBody ReplaceRolesRequest request,
             @AuthenticationPrincipal AuthenticatedUser admin) {
-        return users.replaceRoles(userId, request, admin.getId());
+        return adminUsers.replaceRoles(userId, request, admin.getId());
     }
 }

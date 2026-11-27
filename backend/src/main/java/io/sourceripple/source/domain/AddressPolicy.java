@@ -52,6 +52,7 @@ public class AddressPolicy {
         if (!(address instanceof Inet6Address)) {
             return address;
         }
+
         byte[] b = address.getAddress();
         boolean mapped = isZero(b, 0, 10) && (b[10] & 0xff) == 0xff && (b[11] & 0xff) == 0xff;
         boolean nat64 = (b[0] & 0xff) == 0x00 && (b[1] & 0xff) == 0x64 && (b[2] & 0xff) == 0xff
@@ -59,6 +60,7 @@ public class AddressPolicy {
         if (mapped || nat64) {
             return ipv4(b[12], b[13], b[14], b[15]);
         }
+
         if ((b[0] & 0xff) == 0x20 && (b[1] & 0xff) == 0x02) {
             return ipv4(b[2], b[3], b[4], b[5]);
         }
