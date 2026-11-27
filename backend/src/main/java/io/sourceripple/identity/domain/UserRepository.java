@@ -1,6 +1,7 @@
 package io.sourceripple.identity.domain;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -21,8 +22,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByRolesName(RoleName name);
 
-    long countByEnabledTrueAndRolesName(RoleName name);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u join u.roles r where r.name = :role and u.enabled = true")
+    List<User> findEnabledWithRoleForUpdate(RoleName role);
 
-    Page<User> findByEmailContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(
-            String email, String displayName, Pageable pageable);
+    @Query("""
+            select u from User u
+            where lower(u.email) like lower(concat('%', :query, '%'))
+               or lower(u.displayName) like lower(concat('%', :query, '%'))
+            """)
+    Page<User> search(String query, Pageable pageable);
 }
