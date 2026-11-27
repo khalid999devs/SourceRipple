@@ -20,7 +20,7 @@ This is a single living set of documents. Git history is the change record, so t
 | [phases/phase-07-baseline-screens.md](phases/core/phase-07-baseline-screens.md) | Functional core-loop screens (Ajoy) |
 | [phases/phase-08-integrations-admin.md](phases/additions/phase-08-integrations-admin.md) | Notifications, webhooks, API keys, MCP, admin (Imrul and Lead) |
 | [phases/phase-09-observability-marketing.md](phases/additions/phase-09-observability-marketing.md) | Actuator, Prometheus, Grafana, waitlist (Lead) and marketing site (Imrul) |
-| [phases/phase-10-polish-hardening.md](phases/additions/phase-10-polish-hardening.md) | UI polish (Imrul), test audit, security review, README (Lead), diagrams (Ajoy) |
+| [phases/phase-10-polish-hardening.md](phases/additions/phase-10-polish-hardening.md) | UI polish, test audit, security review, README (Lead), diagrams (Ajoy) |
 | [phases/phase-11-deployments.md](phases/release/phase-11-deployments.md) | Render, Cloud Run, deploy jobs, runbook, release (Lead, smoke tests by Ajoy) |
 | [guides/architecture.md](guides/engineering/architecture.md) | Module map, internal layout, layering, execution model, pattern placement |
 | [guides/backend-conventions.md](guides/engineering/backend-conventions.md) | Naming, DTOs, validation, errors, transactions, security annotations, config, Flyway plan |
