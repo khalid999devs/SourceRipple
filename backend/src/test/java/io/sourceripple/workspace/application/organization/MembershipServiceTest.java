@@ -5,12 +5,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.sourceripple.identity.application.access.AccessPolicy;
 import io.sourceripple.identity.application.account.UserAccountService;
 import io.sourceripple.identity.domain.User;
+import io.sourceripple.shared.api.ErrorCode;
 import io.sourceripple.shared.api.error.status.ConflictException;
 import io.sourceripple.shared.api.error.status.ForbiddenException;
 import io.sourceripple.shared.api.error.status.NotFoundException;
@@ -71,6 +74,17 @@ class MembershipServiceTest {
         assertThat(service.add(ORGANIZATION_ID, new AddMemberRequest("ada@example.com")).userId())
                 .isEqualTo(MEMBER_ID);
         assertThat(organization.getMembers()).contains(member);
+    }
+
+    @Test
+    void addingSomeoneWhoIsAlreadyAMemberIsAConflict() {
+        when(accounts.findIdByEmail("ada@example.com")).thenReturn(Optional.of(MEMBER_ID));
+        when(organizations.existsByIdAndMembersId(ORGANIZATION_ID, MEMBER_ID)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.add(ORGANIZATION_ID, new AddMemberRequest("ada@example.com")))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        ex -> assertThat(ex.code()).isEqualTo(ErrorCode.INVALID_TRANSITION));
+        verify(organizations, never()).flush();
     }
 
     @Test

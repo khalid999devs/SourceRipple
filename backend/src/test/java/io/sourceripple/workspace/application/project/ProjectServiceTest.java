@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.sourceripple.identity.application.access.AccessPolicy;
+import io.sourceripple.workspace.api.dto.project.ProjectSummaryResponse;
 import io.sourceripple.workspace.domain.Organization;
 import io.sourceripple.workspace.domain.OrganizationRepository;
 import io.sourceripple.workspace.domain.Project;
@@ -89,7 +90,7 @@ class ProjectServiceTest {
     void summaryHasZerosUntilContributorsReport() {
         UUID projectId = UUID.randomUUID();
 
-        var summary = service.summary(projectId);
+        ProjectSummaryResponse summary = service.summary(projectId);
 
         assertThat(summary.watchCount()).isZero();
         assertThat(summary.impactsByStatus()).isEmpty();

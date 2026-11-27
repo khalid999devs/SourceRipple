@@ -13,6 +13,7 @@ import io.sourceripple.identity.domain.RoleRepository;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.infrastructure.config.SourceRippleProperties;
+import io.sourceripple.support.TestProperties;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -79,8 +80,7 @@ class BootstrapAdminInitializerTest {
     }
 
     private BootstrapAdminInitializer initializer(String email, String password) {
-        SourceRippleProperties properties = new SourceRippleProperties(
-                null, null, null, new SourceRippleProperties.Admin(email, password), null, null, null, null, null, null, null);
+        SourceRippleProperties properties = TestProperties.withAdmin(new SourceRippleProperties.Admin(email, password));
         return new BootstrapAdminInitializer(users, roles, passwordEncoder, properties, CLOCK);
     }
 }

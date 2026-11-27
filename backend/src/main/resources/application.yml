@@ -91,13 +91,14 @@ sourceripple:
     tick-budget: 60s
     claim-batch: 10
     lease: 5m
+  workspace:
+    max-organizations-per-user: 5
   watches:
     default-interval-hours: 24
     min-interval-hours: ${SOURCERIPPLE_MIN_INTERVAL_HOURS:6}
     versions-retained: 10
     max-per-project: 20
     max-per-organization: 100
-    max-organizations-per-user: 5
     max-active-sources: 200
   fetch:
     allow-private-targets: ${SOURCERIPPLE_FETCH_ALLOW_PRIVATE_TARGETS:false}

@@ -52,6 +52,11 @@ public class UserAccountService {
     }
 
     @Transactional
+    public User lockForUpdate(UUID userId) {
+        return users.findByIdForUpdate(userId).orElseThrow(() -> new NotFoundException("The user was not found."));
+    }
+
+    @Transactional
     public UserAccount setEnabled(UUID userId, boolean enabled) {
         User user = find(userId);
         if (!enabled && user.isEnabled() && isAdmin(user)) {

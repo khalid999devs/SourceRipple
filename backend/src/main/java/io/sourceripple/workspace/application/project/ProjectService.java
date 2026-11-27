@@ -7,6 +7,7 @@ import io.sourceripple.workspace.api.dto.project.CreateProjectRequest;
 import io.sourceripple.workspace.api.dto.project.ProjectResponse;
 import io.sourceripple.workspace.api.dto.project.ProjectSummaryResponse;
 import io.sourceripple.workspace.api.dto.project.UpdateProjectRequest;
+import io.sourceripple.workspace.application.OrganizationNotFoundException;
 import io.sourceripple.workspace.domain.Organization;
 import io.sourceripple.workspace.domain.OrganizationRepository;
 import io.sourceripple.workspace.domain.Project;
@@ -53,20 +54,20 @@ public class ProjectService {
     @PreAuthorize("hasRole('MAINTAINER')")
     @Transactional
     public ProjectResponse create(UUID organizationId, CreateProjectRequest request) {
-        access.canReadOrganization(organizationId);
+        access.requireMember(organizationId);
+
         // Locking the organization serializes creates, so two projects never race for the same slug.
-        Organization organization = organizations
-                .findByIdForUpdate(organizationId)
-                .orElseThrow(() -> new NotFoundException("The organization was not found."));
+        Organization organization =
+                organizations.findByIdForUpdate(organizationId).orElseThrow(OrganizationNotFoundException::new);
         String name = request.name().trim();
-        Project project = new Project(
-                organization, name, uniqueSlug(organizationId, name), trimToNull(request.description()), clock.instant());
+        String slug = uniqueSlug(organizationId, name);
+        Project project = new Project(organization, name, slug, trimToNull(request.description()), clock.instant());
         return ProjectResponse.from(projects.save(project));
     }
 
     @Transactional(readOnly = true)
     public PageResponse<ProjectResponse> list(UUID organizationId, int page, int size) {
-        access.canReadOrganization(organizationId);
+        access.requireMember(organizationId);
         return PageResponse.from(
                 projects.findByOrganizationId(organizationId, PageResponse.request(page, size, Sort.by("name", "id"))),
                 ProjectResponse::from);
@@ -74,14 +75,14 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public ProjectResponse get(UUID projectId) {
-        access.canReadProject(projectId);
+        access.requireProjectMember(projectId);
         return ProjectResponse.from(find(projectId));
     }
 
     @PreAuthorize("hasRole('MAINTAINER')")
     @Transactional
     public ProjectResponse update(UUID projectId, UpdateProjectRequest request) {
-        access.canWriteProject(projectId);
+        access.requireProjectMember(projectId);
         Project project = find(projectId);
         project.update(request.name().trim(), trimToNull(request.description()));
         return ProjectResponse.from(project);
@@ -90,18 +91,16 @@ public class ProjectService {
     @PreAuthorize("hasRole('MAINTAINER')")
     @Transactional
     public void archive(UUID projectId) {
-        access.canWriteProject(projectId);
+        access.requireProjectMember(projectId);
         Project project = find(projectId);
-        if (project.getArchivedAt() != null) {
-            return;
+        if (project.archive(clock.instant())) {
+            archiveListeners.forEach(listener -> listener.onArchived(projectId));
         }
-        project.archive(clock.instant());
-        archiveListeners.forEach(listener -> listener.onArchived(projectId));
     }
 
     @Transactional(readOnly = true)
     public ProjectSummaryResponse summary(UUID projectId) {
-        access.canReadProject(projectId);
+        access.requireProjectMember(projectId);
         ProjectSummary summary = new ProjectSummary();
         summaryContributors.forEach(contributor -> contributor.contribute(projectId, summary));
         return ProjectSummaryResponse.from(projectId, summary);
