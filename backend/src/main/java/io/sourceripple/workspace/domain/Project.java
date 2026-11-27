@@ -50,6 +50,19 @@ public class Project {
         this.createdAt = createdAt;
     }
 
+    public void update(String newName, String newDescription) {
+        name = newName;
+        description = newDescription;
+    }
+
+    public boolean archive(Instant at) {
+        if (archivedAt != null) {
+            return false;
+        }
+        archivedAt = at;
+        return true;
+    }
+
     public UUID getId() {
         return id;
     }

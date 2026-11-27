@@ -1,8 +1,8 @@
 package io.sourceripple.identity.application.access;
 
 import io.sourceripple.identity.domain.RoleName;
-import io.sourceripple.shared.api.error.ForbiddenException;
-import io.sourceripple.shared.api.error.NotFoundException;
+import io.sourceripple.shared.api.error.status.ForbiddenException;
+import io.sourceripple.shared.api.error.status.NotFoundException;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -18,34 +18,35 @@ public class AccessPolicy {
     private final MembershipLookup memberships;
     private final Map<ResourceType, OrganizationResolver> resolvers = new EnumMap<>(ResourceType.class);
 
-    public AccessPolicy(MembershipLookup memberships, List<OrganizationResolver> resolvers) {
+    public AccessPolicy(MembershipLookup memberships, List<OrganizationResolver> organizationResolvers) {
         this.memberships = memberships;
-        resolvers.forEach(resolver -> this.resolvers.put(resolver.resourceType(), resolver));
+        organizationResolvers.forEach(resolver -> resolvers.put(resolver.resourceType(), resolver));
     }
 
-    public boolean canReadOrganization(UUID organizationId) {
-        requireMember(organizationId, currentUser());
-        return true;
+    public void requireMember(UUID organizationId) {
+        requireMembership(organizationId, currentUser());
     }
 
-    public boolean requireOwner(UUID organizationId) {
+    public void requireOwner(UUID organizationId) {
         AuthenticatedUser user = currentUser();
-        requireMember(organizationId, user);
+        requireMembership(organizationId, user);
         if (!memberships.isOwner(organizationId, user.getId())) {
             throw new ForbiddenException("Only the organization owner can do this.");
         }
-        return true;
     }
 
-    public boolean canReadProject(UUID projectId) {
-        requireMember(resolve(ResourceType.PROJECT, projectId), currentUser());
-        return true;
+    public void requireProjectMember(UUID projectId) {
+        requireMembership(resolve(ResourceType.PROJECT, projectId), currentUser());
+    }
+
+    public void requireProjectWriter(UUID projectId) {
+        AuthenticatedUser user = currentUser();
+        requireMembership(resolve(ResourceType.PROJECT, projectId), user);
+        requireRole(user, RoleName.MAINTAINER);
     }
 
     public boolean canWriteProject(UUID projectId) {
-        AuthenticatedUser user = currentUser();
-        requireMember(resolve(ResourceType.PROJECT, projectId), user);
-        requireRole(user, RoleName.MAINTAINER);
+        requireProjectWriter(projectId);
         return true;
     }
 
@@ -57,7 +58,7 @@ public class AccessPolicy {
         return resolver.organizationOf(resourceId).orElseThrow(AccessPolicy::notFound);
     }
 
-    private void requireMember(UUID organizationId, AuthenticatedUser user) {
+    private void requireMembership(UUID organizationId, AuthenticatedUser user) {
         if (organizationId == null || !memberships.isMember(organizationId, user.getId())) {
             throw notFound();
         }
@@ -78,7 +79,6 @@ public class AccessPolicy {
     }
 
     private static NotFoundException notFound() {
-        // Non-members get the same 404 as a missing resource so existence never leaks.
         return new NotFoundException("The resource was not found.");
     }
 }

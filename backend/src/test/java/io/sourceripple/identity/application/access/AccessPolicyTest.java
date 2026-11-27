@@ -1,11 +1,12 @@
 package io.sourceripple.identity.application.access;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import io.sourceripple.shared.api.error.ForbiddenException;
-import io.sourceripple.shared.api.error.NotFoundException;
+import io.sourceripple.shared.api.error.status.ForbiddenException;
+import io.sourceripple.shared.api.error.status.NotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,9 +53,9 @@ class AccessPolicyTest {
         when(projectResolver.organizationOf(PROJECT)).thenReturn(Optional.of(ORGANIZATION));
         when(memberships.isMember(ORGANIZATION, USER)).thenReturn(false);
 
-        assertThatThrownBy(() -> access.canReadProject(PROJECT)).isInstanceOf(NotFoundException.class);
-        assertThatThrownBy(() -> access.canWriteProject(PROJECT)).isInstanceOf(NotFoundException.class);
-        assertThatThrownBy(() -> access.canReadOrganization(ORGANIZATION)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> access.requireProjectMember(PROJECT)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> access.requireProjectWriter(PROJECT)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> access.requireMember(ORGANIZATION)).isInstanceOf(NotFoundException.class);
     }
 
     @Test
@@ -62,7 +63,7 @@ class AccessPolicyTest {
         signInAs("ROLE_MAINTAINER");
         when(projectResolver.organizationOf(PROJECT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> access.canReadProject(PROJECT)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> access.requireProjectMember(PROJECT)).isInstanceOf(NotFoundException.class);
     }
 
     @Test
@@ -71,8 +72,8 @@ class AccessPolicyTest {
         when(projectResolver.organizationOf(PROJECT)).thenReturn(Optional.of(ORGANIZATION));
         when(memberships.isMember(ORGANIZATION, USER)).thenReturn(true);
 
-        assertThat(access.canReadProject(PROJECT)).isTrue();
-        assertThatThrownBy(() -> access.canWriteProject(PROJECT)).isInstanceOf(ForbiddenException.class);
+        assertThatCode(() -> access.requireProjectMember(PROJECT)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> access.requireProjectWriter(PROJECT)).isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -81,6 +82,7 @@ class AccessPolicyTest {
         when(projectResolver.organizationOf(PROJECT)).thenReturn(Optional.of(ORGANIZATION));
         when(memberships.isMember(ORGANIZATION, USER)).thenReturn(true);
 
+        assertThatCode(() -> access.requireProjectWriter(PROJECT)).doesNotThrowAnyException();
         assertThat(access.canWriteProject(PROJECT)).isTrue();
     }
 
@@ -93,7 +95,8 @@ class AccessPolicyTest {
         assertThatThrownBy(() -> access.requireOwner(ORGANIZATION)).isInstanceOf(ForbiddenException.class);
 
         when(memberships.isOwner(ORGANIZATION, USER)).thenReturn(true);
-        assertThat(access.requireOwner(ORGANIZATION)).isTrue();
+
+        assertThatCode(() -> access.requireOwner(ORGANIZATION)).doesNotThrowAnyException();
     }
 
     private static void signInAs(String authority) {
