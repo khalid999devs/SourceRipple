@@ -65,7 +65,6 @@ class AuthServiceTest {
         ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
         verify(users).saveAndFlush(saved.capture());
         assertThat(saved.getValue().getPasswordHash()).isEqualTo("$2a$12$encoded");
-        assertThat(saved.getValue().getPasswordHash()).isNotEqualTo("correct-horse-battery");
         assertThat(saved.getValue().getEmail()).isEqualTo("ada@example.com");
         assertThat(saved.getValue().getCreatedAt()).isEqualTo(NOW);
         assertThat(saved.getValue().getRoles()).containsExactly(reviewer);

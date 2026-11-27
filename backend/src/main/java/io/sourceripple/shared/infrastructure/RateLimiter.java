@@ -5,19 +5,20 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RateLimiter {
 
-    private static final int CLEANUP_EVERY = 1_000;
+    static final int CLEANUP_EVERY = 1_000;
 
     private final Clock clock;
-    private final Map<String, Deque<Instant>> hits = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Bucket> buckets = new ConcurrentHashMap<>();
     private final AtomicLong calls = new AtomicLong();
 
     public RateLimiter(Clock clock) {
@@ -28,29 +29,43 @@ public class RateLimiter {
     public Optional<Duration> tryAcquire(String key, int limit, Duration window) {
         Instant now = clock.instant();
         if (calls.incrementAndGet() % CLEANUP_EVERY == 0) {
-            hits.values().removeIf(log -> isEmptyAfterPruning(log, now.minus(window)));
+            dropIdleBuckets(now);
         }
-        Deque<Instant> log = hits.computeIfAbsent(key, ignored -> new ArrayDeque<>());
-        synchronized (log) {
-            prune(log, now.minus(window));
-            if (log.size() >= limit) {
-                return Optional.of(Duration.between(now, log.peekFirst().plus(window)));
+
+        AtomicReference<Duration> wait = new AtomicReference<>();
+        buckets.compute(key, (ignored, existing) -> {
+            Bucket bucket = new Bucket(window, existing == null ? new ArrayDeque<>() : existing.hits());
+            bucket.prune(now);
+            if (bucket.hits().size() >= limit) {
+                wait.set(Duration.between(now, bucket.hits().peekFirst().plus(window)));
+            } else {
+                bucket.hits().addLast(now);
             }
-            log.addLast(now);
-            return Optional.empty();
+            return bucket;
+        });
+        return Optional.ofNullable(wait.get());
+    }
+
+    int trackedKeys() {
+        return buckets.size();
+    }
+
+    private void dropIdleBuckets(Instant now) {
+        for (String key : buckets.keySet()) {
+            buckets.computeIfPresent(key, (ignored, bucket) -> {
+                bucket.prune(now);
+                return bucket.hits().isEmpty() ? null : bucket;
+            });
         }
     }
 
-    private static boolean isEmptyAfterPruning(Deque<Instant> log, Instant cutoff) {
-        synchronized (log) {
-            prune(log, cutoff);
-            return log.isEmpty();
-        }
-    }
+    private record Bucket(Duration window, Deque<Instant> hits) {
 
-    private static void prune(Deque<Instant> log, Instant cutoff) {
-        while (!log.isEmpty() && !log.peekFirst().isAfter(cutoff)) {
-            log.pollFirst();
+        void prune(Instant now) {
+            Instant cutoff = now.minus(window);
+            while (!hits.isEmpty() && !hits.peekFirst().isAfter(cutoff)) {
+                hits.pollFirst();
+            }
         }
     }
 }
