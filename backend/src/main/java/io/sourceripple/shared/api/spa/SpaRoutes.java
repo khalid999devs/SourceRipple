@@ -1,4 +1,4 @@
-package io.sourceripple.shared.api;
+package io.sourceripple.shared.api.spa;
 
 import java.util.Set;
 
@@ -18,6 +18,7 @@ public final class SpaRoutes {
         if (trimmed.isEmpty()) {
             return true;
         }
+
         if (trimmed.endsWith("/")) {
             trimmed = trimmed.substring(0, trimmed.length() - 1);
         }
@@ -25,6 +26,7 @@ public final class SpaRoutes {
         if (RESERVED_FIRST_SEGMENTS.contains(segments[0])) {
             return false;
         }
+
         for (String segment : segments) {
             if (segment.isEmpty()) {
                 return false;

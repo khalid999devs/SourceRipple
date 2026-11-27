@@ -1,4 +1,4 @@
-package io.sourceripple.shared.api;
+package io.sourceripple.shared.api.spa;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Vendor API Changelog</title>
+    <link>https://vendor.example/changelog</link>
+    <description>Changes to the Vendor API</description>
+    <item>
+      <title>customer_id renamed to customer_reference</title>
+      <link>https://vendor.example/changelog/customer-reference</link>
+      <guid isPermaLink="false">changelog-2026-11-18</guid>
+      <description>The payments parameter customer_id is now customer_reference.</description>
+    </item>
+    <item>
+      <title>Payments v1 released</title>
+      <link>https://vendor.example/changelog/payments-v1</link>
+      <guid isPermaLink="false">changelog-2026-10-01</guid>
+      <description>&lt;p&gt;The &lt;b&gt;Payments&lt;/b&gt; endpoint is generally available.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Nutrition endpoint deprecated</title>
+      <link>https://vendor.example/changelog/nutrition</link>
+      <description>The nutrition endpoint will be removed in 2027.</description>
+    </item>
+  </channel>
+</rss>
