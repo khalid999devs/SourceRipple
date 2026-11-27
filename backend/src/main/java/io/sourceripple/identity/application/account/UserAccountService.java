@@ -1,5 +1,6 @@
 package io.sourceripple.identity.application.account;
 
+import io.sourceripple.identity.application.EmailAddresses;
 import io.sourceripple.identity.domain.Role;
 import io.sourceripple.identity.domain.RoleName;
 import io.sourceripple.identity.domain.RoleRepository;
@@ -8,6 +9,7 @@ import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.api.ErrorCode;
 import io.sourceripple.shared.api.error.status.BadRequestException;
 import io.sourceripple.shared.api.error.status.NotFoundException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,23 +27,33 @@ public class UserAccountService {
     private final UserRepository users;
     private final RoleRepository roles;
     private final FindByIndexNameSessionRepository<? extends Session> sessions;
+    private final CurrentSession currentSession;
 
     public UserAccountService(
             UserRepository users,
             RoleRepository roles,
-            FindByIndexNameSessionRepository<? extends Session> sessions) {
+            FindByIndexNameSessionRepository<? extends Session> sessions,
+            CurrentSession currentSession) {
         this.users = users;
         this.roles = roles;
         this.sessions = sessions;
+        this.currentSession = currentSession;
     }
 
     @Transactional(readOnly = true)
     public Page<UserAccount> search(String query, Pageable pageable) {
-        Page<User> page = StringUtils.hasText(query)
-                ? users.findByEmailContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(
-                        query.trim(), query.trim(), pageable)
-                : users.findAll(pageable);
+        Page<User> page = StringUtils.hasText(query) ? users.search(query.trim(), pageable) : users.findAll(pageable);
         return page.map(UserAccount::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UUID> findIdByEmail(String email) {
+        return users.findByEmailIgnoreCase(EmailAddresses.normalize(email)).map(User::getId);
+    }
+
+    @Transactional
+    public User lockForUpdate(UUID userId) {
+        return users.findByIdForUpdate(userId).orElseThrow(() -> new NotFoundException("The user was not found."));
     }
 
     @Transactional
@@ -50,6 +62,7 @@ public class UserAccountService {
         if (!enabled && user.isEnabled() && isAdmin(user)) {
             requireAnotherEnabledAdmin();
         }
+
         user.setEnabled(enabled);
         if (!enabled) {
             endSessions(user);
@@ -67,12 +80,19 @@ public class UserAccountService {
         if (removesAdmin && user.isEnabled()) {
             requireAnotherEnabledAdmin();
         }
+
         Set<Role> newRoles = roleNames.stream()
                 .map(name -> roles.findByName(name).orElseThrow())
                 .collect(Collectors.toSet());
         user.replaceRoles(newRoles);
+
         // Authorities are cached in the session, so stale sessions would keep the old roles.
-        endSessions(user);
+        if (userId.equals(actingUserId)) {
+            endSessionsExcept(user, currentSession.id().orElse(null));
+            currentSession.refreshRoles(roleNames);
+        } else {
+            endSessions(user);
+        }
         return UserAccount.from(user);
     }
 
@@ -81,13 +101,20 @@ public class UserAccountService {
     }
 
     private void requireAnotherEnabledAdmin() {
-        if (users.countByEnabledTrueAndRolesName(RoleName.ADMIN) <= 1) {
+        // Locking every enabled admin row keeps two concurrent changes from both passing this check.
+        if (users.findEnabledWithRoleForUpdate(RoleName.ADMIN).size() <= 1) {
             throw new BadRequestException(ErrorCode.ROLE_NOT_ALLOWED, "At least one enabled ADMIN must remain.");
         }
     }
 
     private void endSessions(User user) {
-        sessions.findByPrincipalName(user.getEmail()).keySet().forEach(sessions::deleteById);
+        endSessionsExcept(user, null);
+    }
+
+    private void endSessionsExcept(User user, String keptSessionId) {
+        sessions.findByPrincipalName(user.getEmail()).keySet().stream()
+                .filter(sessionId -> !sessionId.equals(keptSessionId))
+                .forEach(sessions::deleteById);
     }
 
     private static boolean isAdmin(User user) {

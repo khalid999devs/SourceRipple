@@ -5,6 +5,7 @@ import io.sourceripple.identity.domain.RoleRepository;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.identity.domain.UserRepository;
 import io.sourceripple.shared.infrastructure.config.SourceRippleProperties;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,9 @@ import org.springframework.util.StringUtils;
 
 @Component
 public class BootstrapAdminInitializer implements ApplicationRunner {
+
+    static final int MIN_PASSWORD_CHARS = 10;
+    static final int MAX_PASSWORD_BYTES = 72;
 
     private static final Logger log = LoggerFactory.getLogger(BootstrapAdminInitializer.class);
 
@@ -51,6 +55,8 @@ public class BootstrapAdminInitializer implements ApplicationRunner {
                     + " no admin was created.");
             return;
         }
+        requireUsablePassword(admin.password());
+
         String email = EmailAddresses.normalize(admin.email());
         // Promoting an existing account would let anyone who registers the admin email first become ADMIN.
         if (users.existsByEmailIgnoreCase(email)) {
@@ -62,5 +68,15 @@ public class BootstrapAdminInitializer implements ApplicationRunner {
         user.addRole(roles.findByName(RoleName.ADMIN).orElseThrow());
         users.save(user);
         log.info("Created the bootstrap ADMIN account.");
+    }
+
+    // BCrypt cannot hash more than 72 bytes, and a bad value should stop startup rather than the first login.
+    private static void requireUsablePassword(String password) {
+        boolean tooShort = password.length() < MIN_PASSWORD_CHARS;
+        boolean tooLong = password.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES;
+        if (tooShort || tooLong) {
+            throw new IllegalStateException("SOURCERIPPLE_ADMIN_PASSWORD must be at least " + MIN_PASSWORD_CHARS
+                    + " characters and at most " + MAX_PASSWORD_BYTES + " bytes in UTF-8.");
+        }
     }
 }

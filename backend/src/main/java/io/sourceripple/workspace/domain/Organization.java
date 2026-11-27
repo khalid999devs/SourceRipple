@@ -56,6 +56,14 @@ public class Organization {
         members.add(user);
     }
 
+    public boolean removeMember(UUID userId) {
+        return members.removeIf(member -> member.getId().equals(userId));
+    }
+
+    public void rename(String newName) {
+        name = newName;
+    }
+
     public UUID getId() {
         return id;
     }

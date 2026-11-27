@@ -30,7 +30,7 @@ Operators see the system move in a provisioned Grafana dashboard fed by Promethe
 - [ ] Admin waitlist: `GET /admin/waitlist` (search), `GET /admin/waitlist/export.csv`, `DELETE /admin/waitlist/{id}` (FR-WEB-6) and UI S18 `src/features/admin/components/WaitlistTab.tsx`.
 - [ ] `POST /api/v1/auth/demo-login` (demo only): session as `reviewer@demo.local` without a password, same context-saving path as login, 10/hour/IP (429 `RATE_LIMITED`) (FR-WEB-7).
 - [ ] P1 `POST /admin/demo/reset`: re-run `DemoSeeder` and set fixture to v1 (FR-WEB-7).
-- [ ] `server.forward-headers-strategy: framework` (prod) so per-IP limits use the real client IP behind Render/Cloud Run proxies.
+- [ ] `server.forward-headers-strategy: native` so per-IP limits use the real client IP behind Render/Cloud Run proxies. Tomcat only trusts `X-Forwarded-For` from private and link-local peers; `framework` would trust any client.
 
 ## Ordered task checklist — marketing site (Imrul)
 Conventions: [frontend-conventions.md](../../guides/engineering/frontend-conventions.md#marketing-site).
