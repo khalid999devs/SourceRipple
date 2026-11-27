@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.jayway.jsonpath.JsonPath;
 import io.sourceripple.support.AbstractIntegrationTest;
 import io.sourceripple.support.Fixtures;
 import jakarta.servlet.http.Cookie;
@@ -33,7 +32,7 @@ class WatchPreviewIT extends AbstractIntegrationTest {
         vendor.setDispatcher(new VendorSite());
         vendor.start(VENDOR_PORT);
         maintainer = registerAndLogin("MAINTAINER");
-        projectId = createProject(maintainer);
+        projectId = createProject(maintainer, createOrganization(maintainer, "Vendor watchers"), "Checkout");
     }
 
     @AfterEach
@@ -115,29 +114,6 @@ class WatchPreviewIT extends AbstractIntegrationTest {
 
     private String url(String path) {
         return vendor.url(path).toString();
-    }
-
-    private String createProject(Cookie owner) throws Exception {
-        String organizationId = JsonPath.read(
-                mvc.perform(post("/api/v1/organizations")
-                                .with(xsrf())
-                                .cookie(owner)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\": \"Vendor watchers\"}"))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString(),
-                "$.id");
-        return JsonPath.read(
-                mvc.perform(post("/api/v1/organizations/" + organizationId + "/projects")
-                                .with(xsrf())
-                                .cookie(owner)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\": \"Checkout\"}"))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString(),
-                "$.id");
     }
 
     private static final class VendorSite extends Dispatcher {
