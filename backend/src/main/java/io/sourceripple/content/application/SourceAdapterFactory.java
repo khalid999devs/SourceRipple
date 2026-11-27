@@ -44,6 +44,7 @@ public class SourceAdapterFactory {
         if (FEED_TYPES.contains(type)) {
             return SourceKind.RSS;
         }
+
         String head = new String(body, 0, Math.min(body.length, SNIFF_BYTES), StandardCharsets.ISO_8859_1)
                 .toLowerCase(Locale.ROOT);
         if (head.contains("<rss") || head.contains("<feed") || head.contains("<rdf:rdf")) {

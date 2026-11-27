@@ -16,6 +16,41 @@ import org.junit.jupiter.api.Test;
 
 class HtmlPageAdapterTest {
 
+    private static final String CHROME_INSIDE_MAIN = """
+            <html><head><title>Vendor Payments API</title></head><body>
+            <main>
+              <header>CHROME header banner</header>
+              <nav><a href="/docs">CHROME nav link</a></nav>
+              <div role="navigation">CHROME role navigation</div>
+              <div role="banner">CHROME role banner</div>
+              <h1>Payments</h1>
+              <p>Create a payment for an order. Payments settle within one business day.</p>
+              <script>document.write("CHROME script");</script>
+              <style>.chrome { content: "CHROME style"; }</style>
+              <noscript>CHROME noscript</noscript>
+              <template><p>CHROME template</p></template>
+              <h2>Parameters</h2>
+              <iframe src="/embed">CHROME iframe</iframe>
+              <table>
+                <tr><th>Name</th><th>Type</th><th>Required</th></tr>
+                <tr><td>customer_id</td><td>string</td><td>yes</td></tr>
+                <tr><td>amount</td><td>integer (cents)</td><td>yes</td></tr>
+              </table>
+              <form action="/search"><label>CHROME form</label><input name="q"></form>
+              <h2>Responses</h2>
+              <aside>CHROME aside</aside>
+              <p>Returns <code>201 Created</code> with the payment object.</p>
+              <h2>Errors</h2>
+              <ul>
+                <li>400 when the amount is not positive</li>
+                <li>404 when the customer does not exist</li>
+              </ul>
+              <div role="contentinfo">CHROME role contentinfo</div>
+              <footer><p>CHROME footer</p></footer>
+            </main>
+            </body></html>
+            """;
+
     private final HtmlPageAdapter adapter = new HtmlPageAdapter();
     private final ExtractionRuleSetPool rules = new ExtractionRuleSetPool();
 
@@ -37,6 +72,17 @@ class HtmlPageAdapterTest {
 
         assertThat(chromeOnly.sections()).isEqualTo(original.sections());
         assertThat(chromeOnly.contentSha256()).isEqualTo(original.contentSha256());
+    }
+
+    @Test
+    void chromeInsideTheMainElementIsRemovedToo() {
+        NormalizedDocument original = adapt(Fixtures.read("payments-v1.html"));
+
+        NormalizedDocument chromeInside = adapt(CHROME_INSIDE_MAIN.getBytes(StandardCharsets.UTF_8));
+
+        assertThat(chromeInside.sections()).isEqualTo(original.sections());
+        assertThat(chromeInside.sections())
+                .allSatisfy(section -> assertThat(section.title() + section.text()).doesNotContain("CHROME"));
     }
 
     @Test
@@ -82,6 +128,29 @@ class HtmlPageAdapterTest {
         assertThat(section(adapt(html.getBytes(StandardCharsets.UTF_8)), "fees").text()).isEqualTo("Flat fee of 2%");
     }
 
+    @Test
+    void inlineTextKeepsItsOrderAndLooseTextIsKept() {
+        String html = """
+                <html><body><main>
+                Loose intro text.
+                <h2>Usage</h2>
+                <div>Use the <code>amount</code> field.</div>
+                Then <em>send</em> the request.
+                </main></body></html>
+                """;
+
+        NormalizedDocument document = adapt(html.getBytes(StandardCharsets.UTF_8));
+
+        assertThat(section(document, "_intro").text()).isEqualTo("Loose intro text.");
+        assertThat(section(document, "usage").text()).isEqualTo("Use the amount field.\nThen send the request.");
+    }
+
+    @Test
+    void flagsAnEmptyScriptMountRoot() {
+        assertThat(adapt(Fixtures.read("js-shell.html")).scriptMounted()).isTrue();
+        assertThat(adapt(Fixtures.read("payments-v1.html")).scriptMounted()).isFalse();
+    }
+
     private NormalizedDocument adapt(byte[] body) {
         NormalizedDocument document =
                 adapter.adapt(body, null, "https://vendor.example/payments", rules.defaultFor(SourceKind.HTML));
@@ -94,7 +163,8 @@ class HtmlPageAdapterTest {
     }
 
     private static Map<String, String> hashes(NormalizedDocument document) {
-        return document.sections().stream().collect(Collectors.toMap(NormalizedSection::key, NormalizedSection::sha256));
+        return document.sections().stream()
+                .collect(Collectors.toMap(NormalizedSection::key, NormalizedSection::sha256));
     }
 
     private static NormalizedSection section(NormalizedDocument document, String key) {

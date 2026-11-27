@@ -61,6 +61,7 @@ public abstract class AbstractIntegrationTest {
 ## External HTTP (TST-R4)
 - **Never** call the real internet. Source pages and webhook receivers use `okhttp3.mockwebserver.MockWebServer` or the demo fixture controller.
 - `application-test.yml` sets `sourceripple.fetch.allow-private-targets: true` (MockWebServer listens on 127.0.0.1). This flag is only true in `local` and `test`; `prod` refuses to start with it (NFR-SEC-1.7).
+- The port allow-list applies in every profile. `application-test.yml` adds port 18089, so an IT that fetches from MockWebServer starts it with `server.start(18089)` (see `WatchPreviewIT`).
 - I13 proves the guard with the flag **off**: `@TestPropertySource(properties = "sourceripple.fetch.allow-private-targets=false")`, then assert 422 `SOURCE_FETCH_BLOCKED` and `server.getRequestCount() == 0`.
 - Webhook ITs (I12): enqueue `MockResponse().setResponseCode(500)` then `200`; read both requests with `takeRequest()`, assert the same `X-SR-Event-Id` and verify `X-SR-Signature` with the test secret. Trigger the retry by advancing the injected clock and calling the due-delivery path; never `Thread.sleep`.
 

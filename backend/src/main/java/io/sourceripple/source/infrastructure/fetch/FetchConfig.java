@@ -11,7 +11,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 @Configuration(proxyBeanMethods = false)
 public class FetchConfig {
@@ -29,7 +28,6 @@ public class FetchConfig {
     }
 
     @Bean
-    @Primary
     WebFetcher webFetcher(
             GlobalFetchLimits limits,
             AddressPolicy addressPolicy,

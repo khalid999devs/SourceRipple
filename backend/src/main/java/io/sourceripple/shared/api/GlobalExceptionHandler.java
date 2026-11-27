@@ -2,6 +2,7 @@ package io.sourceripple.shared.api;
 
 import io.sourceripple.shared.api.error.ApiException;
 import io.sourceripple.shared.api.error.status.RateLimitedException;
+import io.sourceripple.shared.infrastructure.RequestIdFilter;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Comparator;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -63,6 +65,16 @@ public class GlobalExceptionHandler {
         return invalid("The request is invalid.", List.of());
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ApiError> handleConstraintViolation(DataIntegrityViolationException ex) {
+        log.warn("Constraint violation: {}", ex.getMostSpecificCause().getMessage());
+        return respond(
+                ErrorCode.INVALID_TRANSITION,
+                "The request conflicts with a concurrent change. Reload and try again.",
+                false,
+                List.of());
+    }
+
     @ExceptionHandler(DisabledException.class)
     ResponseEntity<ApiError> handleDisabled(DisabledException ex) {
         return respond(ErrorCode.ACCOUNT_DISABLED, "This account is disabled.", false, List.of());
@@ -97,10 +109,10 @@ public class GlobalExceptionHandler {
     }
 
     private static ResponseEntity<ApiError> handleFrameworkClientError(HttpStatusCode status) {
-        if (status.value() == HttpStatus.NOT_FOUND.value()) {
+        if (status.isSameCodeAs(HttpStatus.NOT_FOUND)) {
             return respond(ErrorCode.NOT_FOUND, "The resource was not found.", false, List.of());
         }
-        // The PRD has no codes for 405, 406 or 415, so they keep their status under the request-error code.
+        // There are no dedicated codes for 405, 406 or 415, so they keep their status under the request-error code.
         return ResponseEntity.status(status)
                 .body(body(ErrorCode.VALIDATION_FAILED, "The request is not supported.", false, List.of()));
     }
@@ -116,6 +128,6 @@ public class GlobalExceptionHandler {
 
     private static ApiError body(
             ErrorCode code, String message, boolean retryable, List<ApiError.FieldErrorDetail> fieldErrors) {
-        return new ApiError(code.name(), message, MDC.get("requestId"), retryable, fieldErrors);
+        return new ApiError(code.name(), message, MDC.get(RequestIdFilter.MDC_KEY), retryable, fieldErrors);
     }
 }

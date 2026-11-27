@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public class AuthenticatedUser implements UserDetails, CredentialsContainer {
@@ -27,6 +28,17 @@ public class AuthenticatedUser implements UserDetails, CredentialsContainer {
         this.passwordHash = passwordHash;
         this.enabled = enabled;
         this.authorities = List.copyOf(authorities);
+    }
+
+    public static List<GrantedAuthority> authoritiesOf(Collection<RoleName> roles) {
+        return roles.stream()
+                .sorted()
+                .<GrantedAuthority>map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .toList();
+    }
+
+    public AuthenticatedUser withAuthorities(List<GrantedAuthority> newAuthorities) {
+        return new AuthenticatedUser(id, email, null, enabled, newAuthorities);
     }
 
     public UUID getId() {

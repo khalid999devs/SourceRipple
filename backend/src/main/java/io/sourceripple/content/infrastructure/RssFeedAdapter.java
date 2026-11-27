@@ -6,9 +6,6 @@ import io.sourceripple.content.domain.SourceAdapter;
 import io.sourceripple.content.domain.SourceKind;
 import io.sourceripple.content.domain.TextNormalizer;
 import io.sourceripple.content.domain.rules.ExtractionRuleSet;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +14,6 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -30,16 +26,16 @@ public class RssFeedAdapter implements SourceAdapter {
 
     @Override
     public NormalizedDocument adapt(byte[] body, Charset declaredCharset, String baseUrl, ExtractionRuleSet rules) {
-        Document feed = parse(body, declaredCharset, baseUrl);
+        Document feed = JsoupDocuments.xml(body, declaredCharset, baseUrl);
         boolean atom = feed.selectFirst("feed") != null && feed.selectFirst("rss, channel") == null;
         String title = TextNormalizer.normalize(text(feed.selectFirst(atom ? "feed > title" : "channel > title")));
+
         List<NormalizedSection> sections = new ArrayList<>();
         Map<String, Integer> usedKeys = new HashMap<>();
-        for (Element entry : feed.select(atom ? "entry" : "item")) {
-            String key = atom ? atomKey(entry) : rssKey(entry);
-            if (key.isEmpty()) {
-                key = TextNormalizer.slugify(text(entry.selectFirst("title")));
-            }
+        List<Element> entries = feed.select(atom ? "entry" : "item");
+        for (int index = 0; index < entries.size(); index++) {
+            Element entry = entries.get(index);
+            String key = key(entry, atom, index);
             int seen = usedKeys.merge(key, 1, Integer::sum);
             String entryTitle = TextNormalizer.normalize(text(entry.selectFirst("title")));
             String content = atom
@@ -50,16 +46,12 @@ public class RssFeedAdapter implements SourceAdapter {
         return NormalizedDocument.of(SourceKind.RSS, title, sections);
     }
 
-    private static Document parse(byte[] body, Charset declaredCharset, String baseUrl) {
-        try {
-            return Jsoup.parse(
-                    new ByteArrayInputStream(body),
-                    declaredCharset == null ? null : declaredCharset.name(),
-                    baseUrl == null ? "" : baseUrl,
-                    Parser.xmlParser());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    private static String key(Element entry, boolean atom, int index) {
+        String key = atom ? atomKey(entry) : rssKey(entry);
+        if (key.isEmpty()) {
+            key = TextNormalizer.slugify(text(entry.selectFirst("title")));
         }
+        return key.isEmpty() ? "item-" + (index + 1) : key;
     }
 
     private static String rssKey(Element item) {

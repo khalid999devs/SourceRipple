@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.jayway.jsonpath.JsonPath;
 import io.sourceripple.support.AbstractIntegrationTest;
 import io.sourceripple.support.Fixtures;
 import jakarta.servlet.http.Cookie;
@@ -22,6 +21,8 @@ import org.springframework.test.web.servlet.ResultActions;
 
 class WatchPreviewIT extends AbstractIntegrationTest {
 
+    private static final int VENDOR_PORT = 18089;
+
     private final MockWebServer vendor = new MockWebServer();
     private Cookie maintainer;
     private String projectId;
@@ -29,9 +30,9 @@ class WatchPreviewIT extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         vendor.setDispatcher(new VendorSite());
-        vendor.start(0);
+        vendor.start(VENDOR_PORT);
         maintainer = registerAndLogin("MAINTAINER");
-        projectId = createProject(maintainer);
+        projectId = createProject(maintainer, createOrganization(maintainer, "Vendor watchers"), "Checkout");
     }
 
     @AfterEach
@@ -71,9 +72,11 @@ class WatchPreviewIT extends AbstractIntegrationTest {
         preview(maintainer, url("/logo.png"))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error").value("UNSUPPORTED_CONTENT"));
+
         preview(maintainer, "ftp://vendor.example/payments")
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error").value("SOURCE_FETCH_BLOCKED"));
+
         preview(maintainer, url("/missing"))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error").value("SOURCE_FETCH_FAILED"));
@@ -113,29 +116,6 @@ class WatchPreviewIT extends AbstractIntegrationTest {
 
     private String url(String path) {
         return vendor.url(path).toString();
-    }
-
-    private String createProject(Cookie owner) throws Exception {
-        String organizationId = JsonPath.read(
-                mvc.perform(post("/api/v1/organizations")
-                                .with(xsrf())
-                                .cookie(owner)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\": \"Vendor watchers\"}"))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString(),
-                "$.id");
-        return JsonPath.read(
-                mvc.perform(post("/api/v1/organizations/" + organizationId + "/projects")
-                                .with(xsrf())
-                                .cookie(owner)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\": \"Checkout\"}"))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString(),
-                "$.id");
     }
 
     private static final class VendorSite extends Dispatcher {

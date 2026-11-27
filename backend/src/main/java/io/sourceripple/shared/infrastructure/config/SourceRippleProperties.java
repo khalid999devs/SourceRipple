@@ -13,6 +13,7 @@ public record SourceRippleProperties(
         Admin admin,
         Metrics metrics,
         Scheduler scheduler,
+        Workspace workspace,
         Watches watches,
         Fetch fetch,
         Webhooks webhooks,
@@ -32,13 +33,14 @@ public record SourceRippleProperties(
     public record Scheduler(
             SchedulerMode mode, Duration loopInterval, Duration tickBudget, int claimBatch, Duration lease) {}
 
+    public record Workspace(int maxOrganizationsPerUser) {}
+
     public record Watches(
             int defaultIntervalHours,
             int minIntervalHours,
             int versionsRetained,
             int maxPerProject,
             int maxPerOrganization,
-            int maxOrganizationsPerUser,
             int maxActiveSources) {}
 
     public record Fetch(

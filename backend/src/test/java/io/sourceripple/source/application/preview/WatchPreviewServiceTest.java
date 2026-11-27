@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.sourceripple.content.application.ContentInspector;
+import io.sourceripple.content.application.ContentWarning;
 import io.sourceripple.content.application.ExtractionRuleSetPool;
 import io.sourceripple.content.application.SourceAdapterFactory;
 import io.sourceripple.content.domain.SourceKind;
@@ -22,6 +23,7 @@ import io.sourceripple.source.application.fetch.failure.RobotsDisallowedExceptio
 import io.sourceripple.source.application.fetch.failure.SourceFetchFailedException;
 import io.sourceripple.source.domain.AddressPolicy;
 import io.sourceripple.source.domain.UrlCanonicalizer;
+import io.sourceripple.support.TestProperties;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
@@ -47,17 +49,17 @@ class WatchPreviewServiceTest {
     @BeforeEach
     void setUp() {
         SourceRippleProperties.Limit limit = new SourceRippleProperties.Limit(10, Duration.ofMinutes(1));
-        SourceRippleProperties properties = new SourceRippleProperties(
-                null, null, null, null, null, null, null, null, null,
-                new SourceRippleProperties.RateLimit(limit, limit), null);
+        SourceAdapterFactory adapters = new SourceAdapterFactory(
+                List.of(new HtmlPageAdapter(), new RssFeedAdapter()), new ExtractionRuleSetPool());
+
         service = new WatchPreviewService(
                 fetcher,
                 new UrlCanonicalizer(Set.of(80, 443), new AddressPolicy(false)),
-                new SourceAdapterFactory(List.of(new HtmlPageAdapter(), new RssFeedAdapter()), new ExtractionRuleSetPool()),
+                adapters,
                 new ContentInspector(),
                 TestFetchLimits.defaults(),
                 new RateLimiter(Clock.systemUTC()),
-                properties);
+                TestProperties.withRateLimit(new SourceRippleProperties.RateLimit(limit, limit)));
     }
 
     @Test
@@ -67,7 +69,7 @@ class WatchPreviewServiceTest {
                 + "</p></main></body></html>";
         when(fetcher.fetch(any())).thenReturn(ok("https://docs.example.com/", html));
 
-        WatchPreviewResponse preview = service.preview(PROJECT, new WatchPreviewRequest("HTTPS://Docs.Example.com"), USER);
+        WatchPreviewResponse preview = preview("HTTPS://Docs.Example.com");
 
         assertThat(preview.canonicalUrl()).isEqualTo("https://docs.example.com/");
         assertThat(preview.kind()).isEqualTo(SourceKind.HTML);
@@ -81,9 +83,9 @@ class WatchPreviewServiceTest {
     void robotsDisallowBecomesAWarningInsteadOfAnError() {
         when(fetcher.fetch(any())).thenThrow(new RobotsDisallowedException("https://docs.example.com/"));
 
-        WatchPreviewResponse preview = service.preview(PROJECT, new WatchPreviewRequest("https://docs.example.com/"), USER);
+        WatchPreviewResponse preview = preview("https://docs.example.com/");
 
-        assertThat(preview.warnings()).containsExactly("ROBOTS_DISALLOWED");
+        assertThat(preview.warnings()).containsExactly(ContentWarning.ROBOTS_DISALLOWED);
         assertThat(preview.sections()).isEmpty();
     }
 
@@ -91,10 +93,22 @@ class WatchPreviewServiceTest {
     void serverErrorsAreRetryableFailuresAndNotFoundIsNot() {
         when(fetcher.fetch(any())).thenReturn(status(503)).thenReturn(status(404));
 
-        assertThatThrownBy(() -> service.preview(PROJECT, new WatchPreviewRequest("https://docs.example.com/"), USER))
+        assertThatThrownBy(() -> preview("https://docs.example.com/"))
                 .isInstanceOfSatisfying(SourceFetchFailedException.class, ex -> assertThat(ex.retryable()).isTrue());
-        assertThatThrownBy(() -> service.preview(PROJECT, new WatchPreviewRequest("https://docs.example.com/"), USER))
+        assertThatThrownBy(() -> preview("https://docs.example.com/"))
                 .isInstanceOfSatisfying(SourceFetchFailedException.class, ex -> assertThat(ex.retryable()).isFalse());
+    }
+
+    @Test
+    void canonicalUrlIsTheRequestedUrlEvenAfterARedirect() {
+        String html = "<html><body><main><h2>Moved</h2><p>Now at v2.</p></main></body></html>";
+        when(fetcher.fetch(any())).thenReturn(ok("https://docs.example.com/v2/", html));
+
+        assertThat(preview("https://docs.example.com/").canonicalUrl()).isEqualTo("https://docs.example.com/");
+    }
+
+    private WatchPreviewResponse preview(String url) {
+        return service.preview(PROJECT, new WatchPreviewRequest(url), USER);
     }
 
     private static FetchResult ok(String url, String html) {
@@ -102,6 +116,7 @@ class WatchPreviewServiceTest {
     }
 
     private static FetchResult status(int code) {
-        return new FetchResult(code, "https://docs.example.com/", "text/html", new byte[0], null, null, null, null, 0, 5);
+        return new FetchResult(
+                code, "https://docs.example.com/", "text/html", new byte[0], null, null, null, null, 0, 5);
     }
 }
