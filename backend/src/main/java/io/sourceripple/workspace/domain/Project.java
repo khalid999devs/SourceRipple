@@ -55,10 +55,12 @@ public class Project {
         description = newDescription;
     }
 
-    public void archive(Instant at) {
-        if (archivedAt == null) {
-            archivedAt = at;
+    public boolean archive(Instant at) {
+        if (archivedAt != null) {
+            return false;
         }
+        archivedAt = at;
+        return true;
     }
 
     public UUID getId() {

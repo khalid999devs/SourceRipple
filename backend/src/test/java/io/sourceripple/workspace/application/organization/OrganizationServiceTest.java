@@ -9,16 +9,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.sourceripple.identity.application.access.AccessPolicy;
+import io.sourceripple.identity.application.account.UserAccountService;
 import io.sourceripple.identity.domain.User;
 import io.sourceripple.shared.api.ErrorCode;
 import io.sourceripple.shared.api.error.ApiException;
 import io.sourceripple.shared.infrastructure.config.SourceRippleProperties;
+import io.sourceripple.support.TestProperties;
 import io.sourceripple.workspace.api.dto.organization.CreateOrganizationRequest;
 import io.sourceripple.workspace.api.dto.organization.OrganizationResponse;
 import io.sourceripple.workspace.domain.Organization;
 import io.sourceripple.workspace.domain.OrganizationRepository;
 import io.sourceripple.workspace.domain.ProjectRepository;
-import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -36,6 +37,7 @@ class OrganizationServiceTest {
 
     private static final UUID CREATOR_ID = UUID.randomUUID();
     private static final Instant NOW = Instant.parse("2026-11-20T09:00:00Z");
+    private static final int MAX_OWNED = 5;
 
     @Mock
     private OrganizationRepository organizations;
@@ -47,24 +49,23 @@ class OrganizationServiceTest {
     private AccessPolicy access;
 
     @Mock
-    private EntityManager entityManager;
+    private UserAccountService accounts;
 
     private OrganizationService service;
 
     @BeforeEach
     void setUp() {
-        SourceRippleProperties.Watches watches = new SourceRippleProperties.Watches(24, 6, 10, 20, 100, 5, 200);
         SourceRippleProperties properties =
-                new SourceRippleProperties(null, null, null, null, null, null, watches, null, null, null, null);
+                TestProperties.withWorkspace(new SourceRippleProperties.Workspace(MAX_OWNED));
         service = new OrganizationService(
-                organizations, projects, access, entityManager, Clock.fixed(NOW, ZoneOffset.UTC), properties);
+                organizations, projects, access, accounts, Clock.fixed(NOW, ZoneOffset.UTC), properties);
     }
 
     @Test
     void createMakesTheCreatorOwnerAndMember() {
         User creator = mock(User.class);
         when(creator.getId()).thenReturn(CREATOR_ID);
-        when(entityManager.getReference(User.class, CREATOR_ID)).thenReturn(creator);
+        when(accounts.lockForUpdate(CREATOR_ID)).thenReturn(creator);
         when(organizations.save(any(Organization.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OrganizationResponse response = service.create(new CreateOrganizationRequest(" Acme "), CREATOR_ID);
@@ -80,7 +81,7 @@ class OrganizationServiceTest {
 
     @Test
     void createRejectsASixthOwnedOrganization() {
-        when(organizations.countByOwnerId(CREATOR_ID)).thenReturn(5L);
+        when(organizations.countByOwnerId(CREATOR_ID)).thenReturn((long) MAX_OWNED);
 
         assertThatThrownBy(() -> service.create(new CreateOrganizationRequest("Sixth"), CREATOR_ID))
                 .extracting(ex -> ((ApiException) ex).code())

@@ -11,19 +11,19 @@ public class ProjectSummary {
     private Instant lastCheckAt;
     private final Map<String, Long> impactsByStatus = new TreeMap<>();
 
-    public void watchCount(long count) {
+    public void setWatchCount(long count) {
         watchCount = count;
     }
 
-    public void failingSources(long count) {
+    public void setFailingSources(long count) {
         failingSources = count;
     }
 
-    public void lastCheckAt(Instant at) {
+    public void setLastCheckAt(Instant at) {
         lastCheckAt = at;
     }
 
-    public void impactsByStatus(Map<String, Long> counts) {
+    public void setImpactsByStatus(Map<String, Long> counts) {
         impactsByStatus.putAll(counts);
     }
 

@@ -9,7 +9,7 @@ import io.sourceripple.shared.api.error.status.ConflictException;
 import io.sourceripple.shared.api.error.status.NotFoundException;
 import io.sourceripple.workspace.api.dto.organization.AddMemberRequest;
 import io.sourceripple.workspace.api.dto.organization.MemberResponse;
-import io.sourceripple.workspace.domain.MemberRow;
+import io.sourceripple.workspace.application.OrganizationNotFoundException;
 import io.sourceripple.workspace.domain.Organization;
 import io.sourceripple.workspace.domain.OrganizationRepository;
 import jakarta.persistence.EntityManager;
@@ -40,11 +40,11 @@ public class MembershipService {
 
     @Transactional(readOnly = true)
     public PageResponse<MemberResponse> list(UUID organizationId, int page, int size) {
-        access.canReadOrganization(organizationId);
+        access.requireMember(organizationId);
         UUID ownerId = find(organizationId).getOwner().getId();
         Pageable request = PageResponse.request(page, size, Sort.unsorted());
         return PageResponse.from(
-                organizations.findMembers(organizationId, request), (MemberRow row) -> MemberResponse.from(row, ownerId));
+                organizations.findMembers(organizationId, request), row -> MemberResponse.from(row, ownerId));
     }
 
     @Transactional
@@ -52,6 +52,10 @@ public class MembershipService {
         access.requireOwner(organizationId);
         UUID userId = accounts.findIdByEmail(request.email())
                 .orElseThrow(() -> new NotFoundException("No account exists for this email."));
+        if (organizations.existsByIdAndMembersId(organizationId, userId)) {
+            throw new ConflictException(ErrorCode.INVALID_TRANSITION, "This user is already a member.");
+        }
+
         Organization organization = find(organizationId);
         organization.addMember(entityManager.getReference(User.class, userId));
         organizations.flush();
@@ -74,8 +78,6 @@ public class MembershipService {
     }
 
     private Organization find(UUID organizationId) {
-        return organizations
-                .findById(organizationId)
-                .orElseThrow(() -> new NotFoundException("The organization was not found."));
+        return organizations.findById(organizationId).orElseThrow(OrganizationNotFoundException::new);
     }
 }
