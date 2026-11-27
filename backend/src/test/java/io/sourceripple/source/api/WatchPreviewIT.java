@@ -22,6 +22,8 @@ import org.springframework.test.web.servlet.ResultActions;
 
 class WatchPreviewIT extends AbstractIntegrationTest {
 
+    private static final int VENDOR_PORT = 18089;
+
     private final MockWebServer vendor = new MockWebServer();
     private Cookie maintainer;
     private String projectId;
@@ -29,7 +31,7 @@ class WatchPreviewIT extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         vendor.setDispatcher(new VendorSite());
-        vendor.start(0);
+        vendor.start(VENDOR_PORT);
         maintainer = registerAndLogin("MAINTAINER");
         projectId = createProject(maintainer);
     }

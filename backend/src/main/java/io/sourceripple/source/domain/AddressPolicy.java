@@ -37,10 +37,6 @@ public class AddressPolicy {
         this.allowPrivateTargets = allowPrivateTargets;
     }
 
-    public boolean allowsPrivateTargets() {
-        return allowPrivateTargets;
-    }
-
     public boolean isAllowed(InetAddress address) {
         return allowPrivateTargets || !isForbidden(address);
     }
