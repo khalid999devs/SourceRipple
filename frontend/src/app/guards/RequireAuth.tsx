@@ -19,7 +19,7 @@ export function RequireAuth() {
     const next = encodeURIComponent(pathname + search);
     return <Navigate to={`/login?next=${next}`} replace />;
   }
-  if (me.organizations.length === 0 && pathname !== ONBOARDING_PATH) {
+  if (!me.organizations?.length && pathname !== ONBOARDING_PATH) {
     return <Navigate to={ONBOARDING_PATH} replace />;
   }
 

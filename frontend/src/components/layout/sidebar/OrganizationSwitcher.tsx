@@ -54,7 +54,7 @@ export function OrganizationSwitcher({ collapsed }: OrganizationSwitcherProps) {
         {organizations.map((organization) => (
           <DropdownMenuItem
             key={organization.id}
-            onSelect={() => setActiveOrganization(organization.id)}
+            onSelect={() => setActiveOrganization(organization.id ?? null)}
           >
             <span className="min-w-0 flex-1 truncate">{organization.name}</span>
             {organization.id === active?.id && <Check aria-label="Active" />}

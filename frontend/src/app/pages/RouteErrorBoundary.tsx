@@ -1,5 +1,7 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router';
 
+import { ApiError } from '@/lib/api/api-error';
+
 import { NotFoundPage } from './NotFoundPage';
 import { ServerErrorPage } from './ServerErrorPage';
 
@@ -10,5 +12,5 @@ export function RouteErrorBoundary() {
     return <NotFoundPage />;
   }
 
-  return <ServerErrorPage />;
+  return <ServerErrorPage requestId={error instanceof ApiError ? error.requestId : undefined} />;
 }
