@@ -128,7 +128,8 @@ class HtmlPageAdapterTest {
     }
 
     private static Map<String, String> hashes(NormalizedDocument document) {
-        return document.sections().stream().collect(Collectors.toMap(NormalizedSection::key, NormalizedSection::sha256));
+        return document.sections().stream()
+                .collect(Collectors.toMap(NormalizedSection::key, NormalizedSection::sha256));
     }
 
     private static NormalizedSection section(NormalizedDocument document, String key) {
