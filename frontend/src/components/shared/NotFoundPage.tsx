@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 
-import { Button } from '@/components/ui/button';
-import { useDocumentTitle } from '@/hooks/use-document-title';
+import { Button } from '@/components/ui/form/button';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function NotFoundPage() {
   useDocumentTitle('Page not found');

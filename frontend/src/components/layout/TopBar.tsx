@@ -1,7 +1,7 @@
 import { Plus, Search } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/form/button';
 import { useUiStore } from '@/stores/ui-store';
 
 export function TopBar() {
