@@ -4,8 +4,7 @@
 Every P0 and P1 item except deployment is done and polished. The UI reaches the §8 quality bar, test counts and coverage are audited, a security review is complete, the failing-then-fixed CI evidence exists, the README is written (minus deployment) and the six pattern diagrams are drawn.
 
 ## People
-- **Imrul:** app polish. Reviewer: Lead (Ajoy second).
-- **Lead:** test audit, security review, failing-then-fixed CI evidence, README (§20.1 except item 10), demo script. Reviewer: Imrul.
+- **Lead:** app polish, test audit, security review, failing-then-fixed CI evidence, README (§20.1 except item 10), demo script. Reviewer: Imrul.
 - **Ajoy:** core bug fixes, pattern class diagrams and call paths. Reviewers: Lead / Imrul.
 
 ## Prerequisites
@@ -14,7 +13,7 @@ Every P0 and P1 item except deployment is done and polished. The UI reaches the 
 ## PRD references
 §8.2–§8.5 (polish items, keyboard, responsive, accessibility) · §8.5 S4 charts, S9 graph · NFR-A11Y-1, NFR-COMP-1, NFR-MAINT-1, NFR-PERF-1/2 · §11.5 (diagrams, call paths, tests) · §12 (review checklist) · §14 TST-R1..R7 · §19 · §20.1, §20.2 · §21.5.
 
-## Ordered task checklist — app polish (Imrul)
+## Ordered task checklist — app polish (Lead)
 - [ ] Command palette (cmdk) `src/components/shared/CommandPalette.tsx`, ⌘K / Ctrl-K: jump to project, watch, change; "New watch", "Open Impact Inbox", "Check now on …"; switch organization (§8.4).
 - [ ] Keyboard shortcuts `src/hooks/useShortcuts.ts`: `g o`, `g p`, `g i`, `n`, `j`/`k`, `e`, `r`, `d` (asks for note), `?` shortcut sheet; disabled while typing in inputs (§8.4).
 - [ ] Diff viewer split and unified modes with word highlights; mode saved in `preferences-store`; unified forced on mobile (S8, §8.5).
@@ -52,9 +51,9 @@ Every P0 and P1 item except deployment is done and polished. The UI reaches the 
 ## Suggested PR breakdown
 | # | Branch | Author | Reviewer |
 |---|---|---|---|
-| 1 | `feature/p10-command-palette-shortcuts` | Imrul | Lead |
-| 2 | `feature/p10-diff-modes-responsive` | Imrul | Ajoy |
-| 3 | `feature/p10-dependency-graph-charts` | Imrul | Lead |
+| 1 | `feature/p10-command-palette-shortcuts` | Lead | Imrul |
+| 2 | `feature/p10-diff-modes-responsive` | Lead | Ajoy |
+| 3 | `feature/p10-dependency-graph-charts` | Lead | Imrul |
 | 4 | `feature/p10-motion-a11y` | Imrul | Lead |
 | 5 | `feature/p10-test-audit` | Lead | Ajoy |
 | 6 | `fix/p10-security-review` | Lead | Imrul |

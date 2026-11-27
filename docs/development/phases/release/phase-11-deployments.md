@@ -4,10 +4,9 @@
 The release on `main` is deployed automatically and verifiably to Render (required) and Google Cloud Run (bonus), Render with Render Postgres and Cloud Run with Neon. Scheduled ticks are running, the README explains both deployments, and the demo has been rehearsed twice with a backup video.
 
 ## People
-- **Owner:** Lead (Render, deploy-render job, tick workflow, release, runbook, rehearsals, video).
-- **Imrul:** Cloud Run + Neon + Artifact Registry + WIF + Cloud Scheduler, `deploy-cloudrun` job, README deployment section.
+- **Owner:** Lead (Render, deploy-render job, tick workflow, Cloud Run + Neon + Artifact Registry + WIF + Cloud Scheduler, `deploy-cloudrun` job, README deployment section, release, runbook, rehearsals, video).
 - **Ajoy:** production smoke tests on both URLs.
-- **Reviews:** Lead ↔ Imrul review each other; Ajoy approves the release PR.
+- **Reviews:** Imrul reviews the Lead's PRs; Ajoy approves the release PR.
 
 ## Prerequisites
 - Phase 10 exit criteria met (all P0/P1 except deployment, CI green).
@@ -27,7 +26,7 @@ Step-by-step commands and click paths are in [deployment-runbook.md](../../guide
 - [ ] `ci.yml` job `deploy-render` (push to `main` only, `needs: [backend, frontend, docker]`, `concurrency: deploy-${{ github.ref }}`): POST `"$RENDER_DEPLOY_HOOK_URL&ref=$GITHUB_SHA"`, then poll `$RENDER_APP_URL/actuator/info` until `git.commit == $GITHUB_SHA` (15 min timeout, retries through cold start); fail otherwise (§15.3).
 - [ ] `.github/workflows/scheduler-tick.yml`: `cron: "17 */3 * * *"` + `workflow_dispatch`; POST `$RENDER_APP_URL/internal/scheduler/tick` with `X-SR-Tick-Token`, retrying through cold start (§15.3).
 
-### B. Cloud Run + Neon (Imrul) (§17.4)
+### B. Cloud Run + Neon (Lead) (§17.4)
 - [ ] Neon project (Postgres 17, region per §17.2 **(verify)**, **direct** host, `?sslmode=require`).
 - [ ] GCP: enable Run, Artifact Registry, IAM Credentials, Cloud Scheduler APIs; Artifact Registry Docker repo with a cleanup policy keeping the last 2 images (< 0.5 GB).
 - [ ] Deployer service account (`run.admin`, `artifactregistry.writer`, `iam.serviceAccountUser`); Workload Identity Federation pool + provider bound to this repository; secrets `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT`; variables `GCP_PROJECT_ID`, `GCP_REGION`, `CLOUD_RUN_SERVICE`, `CLOUD_RUN_URL`.
@@ -59,8 +58,8 @@ Step-by-step commands and click paths are in [deployment-runbook.md](../../guide
 |---|---|---|---|
 | 1 | `chore/p11-deploy-render` | Lead | Imrul |
 | 2 | `chore/p11-scheduler-tick` | Lead | Ajoy |
-| 3 | `chore/p11-deploy-cloudrun` | Imrul | Lead |
-| 4 | `docs/p11-readme-deployment` | Imrul | Lead |
+| 3 | `chore/p11-deploy-cloudrun` | Lead | Imrul |
+| 4 | `docs/p11-readme-deployment` | Lead | Imrul |
 | 5 | Release PR `develop → main` | Lead | Ajoy |
 | 6 | `hotfix/<slug>` only if production breaks (cut from `main`, merged back to both) | any | another member |
 

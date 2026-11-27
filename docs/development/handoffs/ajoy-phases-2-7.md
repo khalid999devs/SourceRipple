@@ -20,7 +20,7 @@ You are implementing Phases 2–7 of SourceRipple, an open-source Spring Boot + 
 
 ## Scope boundaries
 - **In scope:** Phases 2, 3 (backend part), 4, 5 (engine and watches), 6 and 7 as written in the phase files.
-- **Not yours:** Imrul's Phase 3 frontend foundation and the Lead's Phase 5 demo kit (you review them; don't build them). Do not start Phases 8–11 (notifications, webhooks, API keys, MCP, admin features beyond FR-ADM-1 (users and roles API), observability, marketing site, deployments).
+- **Not yours:** the Lead's Phase 3 frontend foundation and the Lead's Phase 5 demo kit (you review them; don't build them). Do not start Phases 8–11 (notifications, webhooks, API keys, MCP, admin features beyond FR-ADM-1 (users and roles API), observability, marketing site, deployments).
 - Where your code must connect to later work, leave only the port or call site the phase file describes (for example `BaselineRunner`, `ProjectArchiveListener`). No stub implementations of later features, no fake data, no placeholder endpoints.
 
 ## Repository workflow (strict)
@@ -67,7 +67,7 @@ Do not start a phase until the previous phase's exit criteria are met and merged
 | Phase | Exit criteria (all checkable) | Tests you own |
 |---|---|---|
 | 2 · Identity and access | Auth, sessions in Postgres, CSRF, three enforcement layers; RBAC and auth tests green in CI; BCrypt hashes in DB; bootstrap admin from env | U1, U2, U3, U8; I1, I2, I3, I5 (also FR-ADM-1 users and roles API and the login rate limit) |
-| 3 · Workspace and API (backend) | Org, member, project CRUD with correct codes; error envelope with `requestId` on every error; OpenAPI at `/swagger-ui.html`; login/logout works in the SPA once Imrul's foundation lands | U4, U5, U6; I7, I15 |
+| 3 · Workspace and API (backend) | Org, member, project CRUD with correct codes; error envelope with `requestId` on every error; OpenAPI at `/swagger-ui.html`; login/logout works in the SPA once the Lead's frontend foundation lands | U4, U5, U6; I7, I15 |
 | 4 · Safe fetching and extraction | Preview returns sections for HTML and RSS fixtures; private, loopback, metadata and IP-literal targets blocked; prod refuses `allow-private-targets=true` | U11–U16, U28 |
 | 5 · Monitoring and watches | Fixture watched, baseline READY, re-check creates no duplicate version; loop, tick, leases, backoff, pacing, run log working | U7, U9, U10, U17, U18, U30; I4, I8, I13, I16 (FR-EXT-5 versioning is yours here) |
 | 6 · Changes, dependencies, impacts | **Golden flow green in CI for the Appendix A version, change and impact results** (pair with the Lead on I9; webhook and MCP results are Phase 8); footer-only change ignored; evidence survives pruning | U19–U24; I6, I9 (with Lead), I10, I11 |
