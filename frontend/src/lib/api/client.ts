@@ -1,26 +1,30 @@
 import createClient, { type Middleware } from 'openapi-fetch';
 
+import { ApiError, networkError, toApiError } from './api-error';
+import { CSRF_HEADER, csrfToken, needsCsrfToken } from './csrf';
 import type { paths } from './schema';
 
-const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
-
-function readCookie(name: string): string | undefined {
-  const prefix = `${name}=`;
-  return document.cookie
-    .split('; ')
-    .find((entry) => entry.startsWith(prefix))
-    ?.slice(prefix.length);
-}
-
 const csrfMiddleware: Middleware = {
-  onRequest({ request }) {
-    if (!SAFE_METHODS.has(request.method)) {
-      const token = readCookie('XSRF-TOKEN');
+  async onRequest({ request }) {
+    if (needsCsrfToken(request.method)) {
+      const token = await csrfToken();
       if (token) {
-        request.headers.set('X-XSRF-TOKEN', decodeURIComponent(token));
+        request.headers.set(CSRF_HEADER, token);
       }
     }
     return request;
+  },
+};
+
+const errorMiddleware: Middleware = {
+  async onResponse({ response }) {
+    if (!response.ok) {
+      throw await toApiError(response);
+    }
+    return response;
+  },
+  onError({ error }) {
+    return error instanceof ApiError ? error : networkError();
   },
 };
 
@@ -30,4 +34,4 @@ export const api = createClient<paths>({
   headers: { Accept: 'application/json' },
 });
 
-api.use(csrfMiddleware);
+api.use(csrfMiddleware, errorMiddleware);

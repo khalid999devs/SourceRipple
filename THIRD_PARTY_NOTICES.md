@@ -47,6 +47,8 @@ copied, its original copyright and license notice is kept and recorded here.
 | TanStack Query | MIT |
 | Zustand | MIT |
 | openapi-fetch | MIT |
+| React Hook Form, @hookform/resolvers | MIT |
+| Zod | MIT |
 | Tailwind CSS | MIT |
 | clsx | MIT |
 | tailwind-merge | MIT |

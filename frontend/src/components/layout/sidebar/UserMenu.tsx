@@ -1,4 +1,4 @@
-import { ChevronsUpDown, UserRound } from 'lucide-react';
+import { ChevronsUpDown, LogOut, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 
 import {
@@ -6,9 +6,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/overlay/dropdown-menu';
-import { useMe } from '@/features/auth/api';
+import { useLogout, useMe } from '@/features/auth/api';
 import { cn } from '@/lib/utils';
 
 interface UserMenuProps {
@@ -26,8 +27,9 @@ function initialsOf(name: string): string {
 
 export function UserMenu({ collapsed }: UserMenuProps) {
   const { data: me } = useMe();
-  const displayName = me?.user.displayName ?? '';
-  const email = me?.user.email ?? '';
+  const logout = useLogout();
+  const displayName = me?.user?.displayName ?? '';
+  const email = me?.user?.email ?? '';
 
   return (
     <DropdownMenu>
@@ -61,6 +63,11 @@ export function UserMenu({ collapsed }: UserMenuProps) {
             <UserRound aria-hidden />
             Profile and settings
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={logout.isPending} onSelect={() => logout.mutate()}>
+          <LogOut aria-hidden />
+          Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
