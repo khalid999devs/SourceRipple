@@ -1,6 +1,5 @@
 package io.sourceripple.identity.application.account;
 
-import io.sourceripple.identity.domain.Role;
 import io.sourceripple.identity.domain.RoleName;
 import io.sourceripple.identity.domain.User;
 import java.time.Instant;
@@ -22,7 +21,7 @@ public record UserAccount(
                 user.getEmail(),
                 user.getDisplayName(),
                 user.isEnabled(),
-                user.getRoles().stream().map(Role::getName).sorted().toList(),
+                user.roleNames(),
                 user.getCreatedAt(),
                 user.getLastLoginAt());
     }

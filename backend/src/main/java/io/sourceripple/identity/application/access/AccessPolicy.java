@@ -18,9 +18,9 @@ public class AccessPolicy {
     private final MembershipLookup memberships;
     private final Map<ResourceType, OrganizationResolver> resolvers = new EnumMap<>(ResourceType.class);
 
-    public AccessPolicy(MembershipLookup memberships, List<OrganizationResolver> resolvers) {
+    public AccessPolicy(MembershipLookup memberships, List<OrganizationResolver> organizationResolvers) {
         this.memberships = memberships;
-        resolvers.forEach(resolver -> this.resolvers.put(resolver.resourceType(), resolver));
+        organizationResolvers.forEach(resolver -> resolvers.put(resolver.resourceType(), resolver));
     }
 
     public void requireMember(UUID organizationId) {
@@ -79,7 +79,6 @@ public class AccessPolicy {
     }
 
     private static NotFoundException notFound() {
-        // Non-members get the same 404 as a missing resource so existence never leaks.
         return new NotFoundException("The resource was not found.");
     }
 }
